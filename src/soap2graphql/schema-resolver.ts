@@ -233,7 +233,7 @@ class GraphQlOutputFieldResolver {
             }
         }
 
-        // console.warn(`could not resolve type '${soapType}'; using GraphQLString instead`);
+        console.warn(`could not resolve output type '${soapType}'; using GraphQLString instead`);
         return GraphQLString;
     }
 
@@ -336,7 +336,7 @@ class GraphQlInputFieldResolver {
             const type: GraphQLInputType = this.resolveInputType(input.type);
             return input.isList ? new GraphQLList(type) : type;
         } catch (err) {
-            console.error(`could not resolve input type for ${inspect(input, false, null)}`, err);
+            // console.error(`could not resolve input type for ${inspect(input, false, null)}`, err);
             throw err;
         }
     }
@@ -361,7 +361,7 @@ class GraphQlInputFieldResolver {
             }
         }
 
-        console.warn('could not resolve type; using GraphQLString instead', soapType);
+        console.warn(`could not resolve input type '${soapType}'; using GraphQLString instead`);
         return GraphQLString;
     }
 
