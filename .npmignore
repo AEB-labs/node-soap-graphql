@@ -3,7 +3,7 @@
 .idea/
 
 # development sources
-node-modules/
+node_modules/
 src/
 spec/
 tsconfig*
