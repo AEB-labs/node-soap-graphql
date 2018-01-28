@@ -26,7 +26,7 @@ function callSoap<S, C>(
             if (err) {
                 reject(err);
             } else {
-                resolve(!res ? null : res.result);
+                resolve(!res ? null : (!res.result ? res : res.result));
             }
         });
     });
