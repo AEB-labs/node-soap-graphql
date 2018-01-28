@@ -9,7 +9,7 @@ import * as expressGraphql from 'express-graphql';
 import { GraphQLSchema } from 'graphql';
 import { soapGraphqlSchema } from 'soap-graphql';
 
-soapGraphqlSchema("http://www.webservicex.net/geoipservice.asmx?WSDL").then((schema: GraphQLSchema) => {
+soapGraphqlSchema("http://<<url to wsdl>>").then((schema: GraphQLSchema) => {
 
     const app: express.Application = express();
     app.use('/graphql', expressGraphql({
