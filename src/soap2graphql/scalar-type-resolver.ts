@@ -13,9 +13,11 @@ export class DefaultScalarTypeResolver implements ScalarTypeResolver {
     boolean = GraphQLBoolean;
 
     int = GraphQLInt;
+    short = GraphQLInt;
 
     decimal = GraphQLFloat;
     float = GraphQLFloat;
+    double = GraphQLFloat;
 
     dateTime = GraphQLDateTime;
     date = GraphQLDate;
