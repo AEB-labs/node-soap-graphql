@@ -8,3 +8,5 @@ src/
 spec/
 tsconfig*
 **/*.ts
+
+.npmignore
