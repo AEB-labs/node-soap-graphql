@@ -1,0 +1,38 @@
+{
+  "name": "soap-graphql",
+  "version": "0.0.1",
+  "description": "create a graphql schema from a soap endpoint",
+  "author": "sevenclev",
+  "license": "ISC",
+  "keywords": [
+    "soap",
+    "graphql"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "mocha --opts ./spec/mocha.opts",
+    "build": "rimraf dist && tsc --project ./tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "postpublish": "rimraf ./dist"
+  },
+  "dependencies": {
+    "graphql-iso-date": "~3.3.0"
+  },
+  "peerDependencies": {
+    "graphql": "~0.10.0 | ~0.11.0 | ~0.12.0",
+    "soap": "~0.23.0"
+  },
+  "devDependencies": {
+    "@types/graphql": "~0.12.3",
+    "@types/node": "^8.0.0",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^4.0.1",
+    "graphql": "~0.12.0",
+    "rimraf": "^2.6.2",
+    "soap": "~0.23.0",
+    "ts-node": "~4.1.0",
+    "typescript": "~2.6.2"
+  }
+}

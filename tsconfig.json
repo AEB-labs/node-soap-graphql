@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "target": "es5",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "declaration": true,
+        "removeComments": false,
+        "lib": [
+            "es2016",
+            "es2017",
+            "esnext.asynciterable"
+        ],
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}
