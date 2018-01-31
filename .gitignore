@@ -5,6 +5,7 @@
 # development sources
 node_modules/
 dist/
+**/*.log
 
 # private tests
 spec/private/

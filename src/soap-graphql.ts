@@ -14,6 +14,7 @@ export type SoapGraphQlOptions = {
     };
     schemaOptions?: SchemaOptions;
     soapCaller?: SoapCaller;
+    debug?: boolean;
 }
 
 export async function soapGraphqlSchema(options: SoapGraphQlOptions | string): Promise<GraphQLSchema> {
@@ -30,7 +31,7 @@ export async function soapGraphqlSchemaConfig(options: SoapGraphQlOptions | stri
     }
 
     const soapClient: SoapClient = await useSoapClient(options);
-    const wsdl: SoapEndpoint = await createSoapEndpoint(soapClient);
+    const wsdl: SoapEndpoint = await createSoapEndpoint(soapClient, options.debug);
 
     if (!options.soapCaller) {
         options.soapCaller = createSoapCaller(soapClient);

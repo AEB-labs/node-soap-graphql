@@ -17,6 +17,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "test": "mocha --opts ./spec/mocha.opts",
+    "test-private": "mocha --opts ./spec/private/mocha.opts",
     "build": "rimraf dist && tsc --project ./tsconfig.build.json",
     "prepublishOnly": "npm run build",
     "postpublish": "rimraf ./dist"

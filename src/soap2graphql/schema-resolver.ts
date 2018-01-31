@@ -208,8 +208,9 @@ class GraphQlOutputFieldResolver {
             const type: GraphQLOutputType = this.resolveOutputType(input.type);
             return input.isList ? new GraphQLList(type) : type;
         } catch (err) {
-            // console.error(`could not resolve output type for ${inspect(input, false, null)}`, err);
-            throw err;
+            const errStacked = new Error(`could not resolve output type for ${inspect(input, false, 4)}`);
+            errStacked.stack += '\nCaused by: ' + err.stack;
+            throw errStacked;
         }
     }
 
@@ -336,8 +337,9 @@ class GraphQlInputFieldResolver {
             const type: GraphQLInputType = this.resolveInputType(input.type);
             return input.isList ? new GraphQLList(type) : type;
         } catch (err) {
-            // console.error(`could not resolve input type for ${inspect(input, false, null)}`, err);
-            throw err;
+            const errStacked = new Error(`could not resolve output type for ${inspect(input, false, 4)}`);
+            errStacked.stack += '\nCaused by: ' + err.stack;
+            throw errStacked;
         }
     }
 

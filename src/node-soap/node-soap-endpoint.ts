@@ -1,13 +1,14 @@
 import { SoapEndpoint, SoapType, SoapObjectType, SoapField, SoapService, SoapPort, SoapOperation } from '../soap2graphql/soap-endpoint';
 import { SoapClient } from './node-soap';
+import { inspect } from 'util';
 
-export function createSoapEndpoint(soapClient: SoapClient): SoapEndpoint {
-    return new NodeSoapEndpointImpl(soapClient);
+export function createSoapEndpoint(soapClient: SoapClient, debug: boolean = false): SoapEndpoint {
+    return new NodeSoapEndpointImpl(soapClient, debug);
 }
 
 export class NodeSoapEndpointImpl implements SoapEndpoint {
 
-    constructor(protected soapClient: any) {
+    constructor(protected soapClient: any, public debug: boolean) {
     }
 
     description(): string {
@@ -45,11 +46,18 @@ export class NodeSoapEndpointImpl implements SoapEndpoint {
 
     resolveType(namespace: string, typeName: string): SoapType {
 
+        if (!!this.debug) {
+            console.log(`resolving soap type, namespace: '${namespace}', typeName: '${typeName}'`);
+        }
+
         if (!typeName) {
             return null;
         }
 
         if (this.alreadyResolved.has(namespace + typeName)) {
+            if (!!this.debug) {
+                console.log(`resolved namespace: '${namespace}', typeName: '${typeName}' from cache`);
+            }
             return this.alreadyResolved.get(namespace + typeName);
         }
 
@@ -58,6 +66,11 @@ export class NodeSoapEndpointImpl implements SoapEndpoint {
             // primitive type, e.g. 'string'
             const wsdlType: string = withoutNamespace(typeName);
             this.alreadyResolved.set(namespace + typeName, wsdlType);
+
+            if (!!this.debug) {
+                console.log(`resolved namespace: '${namespace}', typeName: '${typeName}' to primitive '${inspect(wsdlType, false, 3)}'`);
+            }
+
             return wsdlType;
         } else {
             const wsdlType: SoapObjectType = this.createType(namespace, definition);
@@ -65,6 +78,11 @@ export class NodeSoapEndpointImpl implements SoapEndpoint {
             // resolve bindings (field types, base type) after type has been registered to resolve circular dependencies
             // @todo should solve this with Promise
             this.resolveBindings(wsdlType, namespace, definition);
+
+            if (!!this.debug) {
+                console.log(`resolved namespace: '${namespace}', typeName: '${typeName}' to object type '${inspect(wsdlType, false, 3)}'`);
+            }
+
             return wsdlType;
         }
 
@@ -196,7 +214,12 @@ export class NodeSoapOperation implements SoapOperation {
     }
 
     private createFields(): SoapField[] {
+
         const inputContent: any = this._content['input'];
+
+        if (!!this.endpoint().debug) {
+            console.log(`creating fields for operation '${this.name()}' from input content '${inspect(inputContent, false, 5)}'`);
+        }
 
         const wsdlFields: SoapField[] = nonNamespaceKeys(inputContent).map((key: string) => {
             const parsedFieldName = parseFieldName(key);
@@ -229,20 +252,35 @@ export class NodeSoapOperation implements SoapOperation {
     private createOutputType(): { type: SoapType, isList: boolean } {
         const outputContent: any = this._content['output'];
 
+        if (!!this.endpoint().debug) {
+            console.log(`creating output type for operation '${this.name()}' from output content '${inspect(outputContent, false, 5)}'`);
+        }
+
         // find the name of the result content
         const outputKeys: string[] = nonNamespaceKeys(outputContent);
-        if (outputKeys.length > 1) {
-            console.warn('multiple fields in output of operation ', this.name());
+        if (outputKeys.length > 0) {
+            if (outputKeys.length > 1) {
+                console.warn('multiple fields in output of operation ', this.name());
+            }
+            const resultFieldName = outputKeys[0];
+
+            const resultContent = outputContent[resultFieldName];
+            const resultTypeName: string =
+                typeof resultContent === 'string'
+                    ? resultContent // primitive
+                    : this.endpoint().findTypeName(resultContent);
+
+            return {
+                type: this.endpoint().resolveType(targetNamespace(resultContent), resultTypeName),
+                isList: parseFieldName(resultFieldName).isList
+            };
+        } else {
+            // void operation; use String as result type. when executed, it will return null
+            return {
+                type: 'string',
+                isList: false
+            };
         }
-        const resultFieldName = outputKeys[0];
-
-        const resultContent = outputContent[resultFieldName];
-        const resultTypeName: string = this.endpoint().findTypeName(resultContent);
-
-        return {
-            type: this.endpoint().resolveType(targetNamespace(resultContent), resultTypeName),
-            isList: parseFieldName(resultFieldName).isList
-        };
     }
 
 }

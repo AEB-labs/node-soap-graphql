@@ -7,7 +7,7 @@ export type NodeSoapOptions = {
     basicAuth?: {
         username: string;
         password: string;
-    }
+    };
 };
 
 export async function createSoapClient(url: string, options: NodeSoapOptions = {}): Promise<SoapClient> {
