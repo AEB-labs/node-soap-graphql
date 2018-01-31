@@ -6,7 +6,8 @@
   "license": "ISC",
   "keywords": [
     "soap",
-    "graphql"
+    "graphql",
+    "node-soap"
   ],
   "repository": {
     "type": "git",

@@ -1,6 +1,8 @@
 # soap-graphql
 
-Create a graphql schema based on soap endpoint.
+Create a graphql schema based on a WSDL-defined soap endpoint.
+
+Note: Not production ready (yet). Will only work for a limited number of WSDLs.
 
 ## Example
 ```typescript
