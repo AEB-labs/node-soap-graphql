@@ -28,6 +28,7 @@ describe('default scalar type resolver', () => {
         expect(resolver.resolve('short')).to.equal(GraphQLInt);
         expect(resolver.resolve('int')).to.equal(GraphQLInt);
         expect(resolver.resolve('long')).to.equal(GraphQLInt);
+        expect(resolver.resolve('unsignedLong')).to.equal(GraphQLInt);
         
         expect(resolver.resolve('decimal')).to.equal(GraphQLFloat);
         expect(resolver.resolve('float')).to.equal(GraphQLFloat);
