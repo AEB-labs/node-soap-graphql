@@ -29,6 +29,7 @@ export interface SoapOperation {
     name(): string;
     inputs(): SoapOperationInput[];
     output(): { type: SoapType; isList: boolean };
+    resultField(): string;
 }
 
 export type SoapType = SoapObjectType | string;

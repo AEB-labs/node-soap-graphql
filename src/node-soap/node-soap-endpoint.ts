@@ -241,15 +241,21 @@ export class NodeSoapOperation implements SoapOperation {
         return this.endpoint().resolveType(targetNamespace(fieldContent), complexType || fieldContent)
     }
 
-    private _output: { type: SoapType, isList: boolean } = null;
+    private _output: { type: { type: SoapType, isList: boolean }; resultField: string } = null;
     output(): { type: SoapType, isList: boolean } {
         if (!this._output) {
-            this._output = this.createOutputType();
+            this._output = this.createOutput();
         }
-        return this._output;
+        return this._output.type;
+    }
+    resultField(): string {
+        if (!this._output) {
+            this._output = this.createOutput();
+        }
+        return this._output.resultField;
     }
 
-    private createOutputType(): { type: SoapType, isList: boolean } {
+    private createOutput(): { type: { type: SoapType, isList: boolean }; resultField: string } {
         const outputContent: any = this._content['output'];
 
         if (!!this.endpoint().debug) {
@@ -271,14 +277,20 @@ export class NodeSoapOperation implements SoapOperation {
                     : this.endpoint().findTypeName(resultContent);
 
             return {
-                type: this.endpoint().resolveType(targetNamespace(resultContent), resultTypeName),
-                isList: parseFieldName(resultFieldName).isList
+                type: {
+                    type: this.endpoint().resolveType(targetNamespace(resultContent), resultTypeName),
+                    isList: parseFieldName(resultFieldName).isList
+                },
+                resultField: resultFieldName
             };
         } else {
             // void operation; use String as result type. when executed, it will return null
             return {
-                type: 'string',
-                isList: false
+                type: {
+                    type: 'string',
+                    isList: false
+                },
+                resultField: null
             };
         }
     }

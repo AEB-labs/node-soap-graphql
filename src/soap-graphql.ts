@@ -34,7 +34,7 @@ export async function soapGraphqlSchemaConfig(options: SoapGraphQlOptions | stri
     const wsdl: SoapEndpoint = await createSoapEndpoint(soapClient, options.debug);
 
     if (!options.soapCaller) {
-        options.soapCaller = createSoapCaller(soapClient);
+        options.soapCaller = createSoapCaller(soapClient, options.debug);
     }
 
     return await createSchemaConfig(wsdl, options.soapCaller, options.schemaOptions);

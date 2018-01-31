@@ -55,7 +55,7 @@ describe('call soap endpoints', () => {
     }).timeout(5000);
 
     // @todo
-    xit('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
+    it('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
         await queryEndpoint('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', `
             mutation {
                 ConversionRate(FromCurrency: "AFA", ToCurrency: "ALL")
@@ -64,7 +64,7 @@ describe('call soap endpoints', () => {
     }).timeout(5000);
 
     // @todo
-    xit('http://www.webservicex.net/globalweather.asmx?WSDL', async () => {
+    it('http://www.webservicex.net/globalweather.asmx?WSDL', async () => {
         await queryEndpoint('http://www.webservicex.net/globalweather.asmx?WSDL', `
             mutation {
                 GetCitiesByCountry(CountryName: 'Germany')

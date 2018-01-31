@@ -2,10 +2,11 @@ import { SoapOperation } from '../soap2graphql/soap-endpoint';
 import { SoapCaller } from '../soap2graphql/soap-caller';
 import { SoapClient } from './node-soap';
 import { GraphQLResolveInfo } from 'graphql/type/definition';
+import { inspect } from 'util';
 
-export function createSoapCaller(soapClient: SoapClient): SoapCaller {
+export function createSoapCaller(soapClient: SoapClient, debug: boolean): SoapCaller {
     return async (operation: SoapOperation, graphQlSource: any, graphQlArgs: { [argName: string]: any }, graphQlContext: any, graphQlInfo: GraphQLResolveInfo) => {
-        return await callSoap(soapClient, operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo);
+        return await callSoap(soapClient, operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo, debug);
     };
 }
 
@@ -15,7 +16,12 @@ function callSoap<S, C>(
     source: S,
     args: { [argName: string]: any },
     context: C,
-    info: GraphQLResolveInfo): Promise<any> {
+    info: GraphQLResolveInfo,
+    debug: boolean): Promise<any> {
+
+    if (!!debug) {
+        console.log(`call operation ${operation.name()} with args ${inspect(args, false, 5)}`);
+    }
 
     const requestMessage = {};
     Array.from(Object.keys(args)).forEach(key => {
@@ -26,7 +32,15 @@ function callSoap<S, C>(
             if (err) {
                 reject(err);
             } else {
-                resolve(!res ? null : (!res.result ? res : res.result));
+                if (!!debug) {
+                    console.log(`operation ${operation.name()} returned ${inspect(res, false, 5)}`);
+                }
+                if (!operation.resultField()) {
+                    // void operation
+                    resolve(!res ? null : JSON.stringify(res));
+                } else {
+                    resolve(!res ? null : res[operation.resultField()]);
+                }
             }
         });
     });
