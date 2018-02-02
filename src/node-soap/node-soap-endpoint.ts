@@ -1,12 +1,12 @@
 import { SoapEndpoint, SoapType, SoapObjectType, SoapField, SoapService, SoapPort, SoapOperation } from '../soap2graphql/soap-endpoint';
-import { SoapClient } from './node-soap';
+import { SoapClient, NodeSoapOptions } from './node-soap';
 import { inspect } from 'util';
 
 export function createSoapEndpoint(soapClient: SoapClient, debug: boolean = false): SoapEndpoint {
-    return new NodeSoapEndpointImpl(soapClient, debug);
+    return new NodeSoapEndpoint(soapClient, debug);
 }
 
-export class NodeSoapEndpointImpl implements SoapEndpoint {
+export class NodeSoapEndpoint implements SoapEndpoint {
 
     constructor(protected soapClient: any, public debug: boolean) {
     }
@@ -136,10 +136,10 @@ export class NodeSoapEndpointImpl implements SoapEndpoint {
 
 export class NodeSoapService implements SoapService {
 
-    constructor(private _wsdl: NodeSoapEndpointImpl, private _name: string, private _content: any) {
+    constructor(private _wsdl: NodeSoapEndpoint, private _name: string, private _content: any) {
     }
 
-    endpoint(): NodeSoapEndpointImpl {
+    endpoint(): NodeSoapEndpoint {
         return this._wsdl;
     }
 
@@ -147,7 +147,15 @@ export class NodeSoapService implements SoapService {
         return this._name;
     }
 
+    private _ports: NodeSoapPort[] = null;
     ports(): NodeSoapPort[] {
+        if (!this._ports) {
+            this._ports = this.createPorts();
+        }
+        return this._ports;
+    }
+
+    private createPorts(): NodeSoapPort[] {
         const ports: NodeSoapPort[] = [];
         for (let key in this._content) {
             ports.push(new NodeSoapPort(this, key, this._content[key]));
@@ -162,7 +170,7 @@ export class NodeSoapPort implements SoapPort {
     constructor(private _service: NodeSoapService, private _name: string, private _content: any) {
     }
 
-    endpoint(): NodeSoapEndpointImpl {
+    endpoint(): NodeSoapEndpoint {
         return this.service().endpoint();
     }
 
@@ -174,7 +182,15 @@ export class NodeSoapPort implements SoapPort {
         return this._name;
     }
 
+    private _operations: NodeSoapOperation[] = null;
     operations(): NodeSoapOperation[] {
+        if (!this._operations) {
+            this._operations = this.createOperations();
+        }
+        return this._operations;
+    }
+
+    private createOperations(): NodeSoapOperation[] {
         const operations: NodeSoapOperation[] = [];
         for (let key in this._content) {
             operations.push(new NodeSoapOperation(this, key, this._content[key]));
@@ -189,7 +205,7 @@ export class NodeSoapOperation implements SoapOperation {
     constructor(private _port: NodeSoapPort, private _name: string, private _content: any) {
     }
 
-    endpoint(): NodeSoapEndpointImpl {
+    endpoint(): NodeSoapEndpoint {
         return this.port().endpoint();
     }
 
