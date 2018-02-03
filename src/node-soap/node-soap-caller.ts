@@ -1,17 +1,17 @@
 import { SoapOperation } from '../soap2graphql/soap-endpoint';
 import { SoapCaller } from '../soap2graphql/soap-caller';
-import { SoapClient } from './node-soap';
+import { NodeSoapClient } from './node-soap';
 import { GraphQLResolveInfo } from 'graphql/type/definition';
 import { inspect } from 'util';
 
-export function createSoapCaller(soapClient: SoapClient, debug: boolean): SoapCaller {
+export function createSoapCaller(soapClient: NodeSoapClient, debug: boolean): SoapCaller {
     return async (operation: SoapOperation, graphQlSource: any, graphQlArgs: { [argName: string]: any }, graphQlContext: any, graphQlInfo: GraphQLResolveInfo) => {
         return await callSoap(soapClient, operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo, debug);
     };
 }
 
 function callSoap<S, C>(
-    soapClient: SoapClient,
+    soapClient: NodeSoapClient,
     operation: SoapOperation,
     source: S,
     args: { [argName: string]: any },

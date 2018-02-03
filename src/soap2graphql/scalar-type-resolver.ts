@@ -5,6 +5,7 @@ export interface ScalarTypeResolver {
     resolve(wsdlTypeName: string): GraphQLScalarType;
 }
 
+// @todo match with https://www.w3.org/TR/xmlschema-2/#built-in-primitive-datatypes
 export class DefaultScalarTypeResolver implements ScalarTypeResolver {
 
     string = GraphQLString;

@@ -1,4 +1,4 @@
-import { SoapClient, NodeSoapOptions, createSoapClient } from './node-soap/node-soap';
+import { NodeSoapClient, NodeSoapOptions, createSoapClient } from './node-soap/node-soap';
 import { SchemaOptions, createSchemaConfig } from './soap2graphql/soap2graphql';
 import { SoapCaller } from './soap2graphql/soap-caller';
 import { GraphQLSchema, GraphQLSchemaConfig } from 'graphql/type/schema';
@@ -7,7 +7,7 @@ import { createSoapEndpoint } from './node-soap/node-soap-endpoint';
 import { createSoapCaller } from './node-soap/node-soap-caller';
 
 export type SoapGraphQlOptions = {
-    soapClient?: SoapClient;
+    soapClient?: NodeSoapClient;
     createClient?: {
         url: string;
         options?: NodeSoapOptions;
@@ -27,10 +27,10 @@ export async function soapGraphqlSchemaConfig(options: SoapGraphQlOptions | stri
             createClient: {
                 url: options
             }
-        }
+        };
     }
 
-    const soapClient: SoapClient = await useSoapClient(options);
+    const soapClient: NodeSoapClient = await useSoapClient(options);
     const wsdl: SoapEndpoint = await createSoapEndpoint(soapClient, options.debug);
 
     if (!options.soapCaller) {
@@ -40,7 +40,7 @@ export async function soapGraphqlSchemaConfig(options: SoapGraphQlOptions | stri
     return await createSchemaConfig(wsdl, options.soapCaller, options.schemaOptions);
 }
 
-async function useSoapClient(options: SoapGraphQlOptions): Promise<SoapClient> {
+async function useSoapClient(options: SoapGraphQlOptions): Promise<NodeSoapClient> {
     if (!!options.soapClient) {
         return options.soapClient;
     }

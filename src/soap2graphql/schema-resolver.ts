@@ -3,7 +3,7 @@ import { defaultOutputNameResolver, defaultInterfaceNameResolver, defaultInputNa
 import { DefaultScalarTypeResolver } from './scalar-type-resolver';
 import { GraphQLSchemaConfig } from 'graphql/type/schema';
 import { GraphQLString } from 'graphql/type/scalars';
-import { SoapEndpoint, SoapService, SoapPort, SoapOperation, SoapField, SoapType, SoapObjectType, SoapOperationInput } from './soap-endpoint';
+import { SoapEndpoint, SoapService, SoapPort, SoapOperation, SoapField, SoapType, SoapObjectType, SoapOperationArg } from './soap-endpoint';
 import { SoapCaller } from './soap-caller';
 import { inspect } from 'util';
 import { GraphQLObjectType, Thunk, GraphQLFieldConfigMap, GraphQLFieldConfig, GraphQLFieldConfigArgumentMap, GraphQLOutputType, GraphQLFieldResolver, GraphQLNonNull, GraphQLResolveInfo, GraphQLInterfaceType, GraphQLList, GraphQLScalarType, GraphQLObjectTypeConfig, GraphQLInterfaceTypeConfig, GraphQLInputType, GraphQLInputObjectType, GraphQLInputObjectTypeConfig, GraphQLInputFieldConfigMap } from 'graphql';
@@ -165,13 +165,13 @@ export class SchemaResolver {
 
         const args: GraphQLFieldConfigArgumentMap = {};
 
-        const inputs: SoapOperationInput[] = operation.inputs();
+        const inputs: SoapOperationArg[] = operation.args();
         if (inputs.length == 1) {
             args[inputs[0].name] = {
                 type: new GraphQLNonNull(this.inputResolver.resolve(inputs[0])),
             };
         } else {
-            operation.inputs().forEach((soapField: SoapField) => {
+            operation.args().forEach((soapField: SoapField) => {
                 args[soapField.name] = {
                     type: this.inputResolver.resolve(soapField),
                 };

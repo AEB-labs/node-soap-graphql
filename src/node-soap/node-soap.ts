@@ -1,6 +1,6 @@
 import { createClient, BasicAuthSecurity, Client, IOptions } from 'soap';
 
-export type SoapClient = any | Client;
+export type NodeSoapClient = any | Client;
 
 export type NodeSoapOptions = {
     options?: IOptions;
@@ -10,7 +10,7 @@ export type NodeSoapOptions = {
     };
 };
 
-export async function createSoapClient(url: string, options: NodeSoapOptions = {}): Promise<SoapClient> {
+export async function createSoapClient(url: string, options: NodeSoapOptions = {}): Promise<NodeSoapClient> {
     return new Promise<any>((resolve, reject) => {
         createClient(url, options, (err: any, client: Client) => {
             if (err) {

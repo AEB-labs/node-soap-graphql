@@ -27,12 +27,14 @@ export interface SoapOperation {
     service(): SoapService;
     port(): SoapPort;
     name(): string;
-    inputs(): SoapOperationInput[];
+    args(): SoapOperationArg[];
     output(): { type: SoapType; isList: boolean };
     resultField(): string;
 }
 
-export type SoapType = SoapObjectType | string;
+export type SoapType = SoapObjectType | SoapPrimitiveType;
+
+export type SoapPrimitiveType = string;
 
 export interface SoapObjectType {
     name: string;
@@ -46,4 +48,4 @@ export interface SoapField {
     isList: boolean;
 }
 
-export type SoapOperationInput = SoapField;
+export type SoapOperationArg = SoapField;
