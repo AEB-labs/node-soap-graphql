@@ -64,21 +64,22 @@ export class NodeSoapWsdlResolver {
 
         // inputContent===null -> argNames===[]
         const argNames: string[] = nonNamespaceKeys(inputContent);
+        const inputNamespace = targetNamespace(inputContent);
 
         const args: SoapOperationArg[] = argNames.map((key: string) => {
-            return this.createOperationArg(operation, key, inputContent[key]);
+            return this.createOperationArg(operation, inputNamespace, key, inputContent[key]);
         }).filter(arg => !!arg);
 
         return args;
     }
 
-    private createOperationArg(operation: NodeSoapOperation, argWsdlFieldName: string, argContent: WsdlArgContent): SoapOperationArg {
+    private createOperationArg(operation: NodeSoapOperation, inputNamespace: string, argWsdlFieldName: string, argContent: WsdlArgContent): SoapOperationArg {
 
         this.debug(() => `creating arg for operation '${operation.name()}' from content '${inspect(argContent, false, 5)}'`);
 
         const parsedArgName: { name: string, isList: boolean } = parseWsdlFieldName(argWsdlFieldName);
 
-        const inputType: SoapType = this.resolveContentToSoapType(argContent, `arg '${argWsdlFieldName}' of operation '${operation.name()}'`);
+        const inputType: SoapType = this.resolveContentToSoapType(inputNamespace, argContent, `arg '${argWsdlFieldName}' of operation '${operation.name()}'`);
 
         const input: SoapOperationArg = {
             name: parsedArgName.name,
@@ -97,10 +98,11 @@ export class NodeSoapWsdlResolver {
         // determine type and field name
         let resultType: SoapType;
         let resultFieldName: string;
+        const outputNamespace = targetNamespace(outputContent);
         const ownerStringForLog: string = `output of operation '${operation.name()}'`;
         if (!outputContent) {
             this.warn(() => `no definition for output type of operation '${operation.name()}', using 'string'`);
-            resultType = this.resolveContentToSoapType('string', ownerStringForLog);
+            resultType = this.resolveContentToSoapType(outputNamespace, 'string', ownerStringForLog);
 
         } else {
             const outputContentKeys: string[] = nonNamespaceKeys(outputContent);
@@ -109,7 +111,7 @@ export class NodeSoapWsdlResolver {
                 // content has no sub content
                 // void operation; use String as result type. when executed, it will return null
                 resultFieldName = null;
-                resultType = this.resolveContentToSoapType('string', ownerStringForLog);
+                resultType = this.resolveContentToSoapType(outputNamespace, 'string', ownerStringForLog);
 
             } else {
 
@@ -124,10 +126,10 @@ export class NodeSoapWsdlResolver {
 
                 if (!resultContent) {
                     this.warn(() => `no type definition for result field '${resultFieldName}' in output definition for operation '${operation.name()}', using 'string'`);
-                    resultType = this.resolveContentToSoapType('string', ownerStringForLog);
+                    resultType = this.resolveContentToSoapType(outputNamespace, 'string', ownerStringForLog);
 
                 } else {
-                    resultType = this.resolveContentToSoapType(resultContent, ownerStringForLog);
+                    resultType = this.resolveContentToSoapType(outputNamespace, resultContent, ownerStringForLog);
                 }
             }
         }
@@ -144,19 +146,22 @@ export class NodeSoapWsdlResolver {
 
     }
 
-    private resolveContentToSoapType(typeContent: WsdlTypeContent, ownerStringForLog: string): SoapType {
+    private resolveContentToSoapType(parentNamespace: string, typeContent: WsdlTypeContent, ownerStringForLog: string): SoapType {
 
         this.debug(() => `resolving soap type for ${ownerStringForLog} from content '${inspect(typeContent, false, 3)}'`);
 
         // determine name of the type
         let wsdlTypeName;
+        let namespace;
         if (!typeContent) {
             this.warn(() => `no type definition for ${ownerStringForLog}, using 'string'`);
             wsdlTypeName = 'string';
+            namespace = parentNamespace;
 
         } else if (typeof typeContent === 'string') {
             // primitive type
-            wsdlTypeName = typeContent;
+            wsdlTypeName = withoutNamespace(typeContent);
+            namespace = parentNamespace;
 
         } else {
             wsdlTypeName = this.findTypeName(typeContent);
@@ -164,11 +169,11 @@ export class NodeSoapWsdlResolver {
                 this.warn(() => `no type name found for ${ownerStringForLog}, using 'string'`);
                 wsdlTypeName = 'string';
             }
+            namespace = targetNamespace(typeContent);
         }
 
-        const wsdlNamespace: string = targetNamespace(typeContent);
 
-        return this.resolveWsdlNameToSoapType(wsdlNamespace, wsdlTypeName, ownerStringForLog);
+        return this.resolveWsdlNameToSoapType(namespace, wsdlTypeName, ownerStringForLog);
     }
 
     private findTypeName(content: WsdlTypeContent): string {
