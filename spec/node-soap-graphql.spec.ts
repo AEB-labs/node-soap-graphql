@@ -83,15 +83,6 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    // @todo resolve type CurrencyName
-    it('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
-        await queryEndpoint('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', `
-            mutation {
-                ConversionRate(FromCurrency: "AFA", ToCurrency: "ALL")
-            }
-        `);
-    }).timeout(5000);
-
     it('http://www.webservicex.net/globalweather.asmx?WSDL', async () => {
         await queryEndpoint('http://www.webservicex.net/globalweather.asmx?WSDL', `
             mutation {
@@ -117,19 +108,6 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    // @todo resolve type Astronomical
-    it('http://www.webservicex.net/Astronomical.asmx?WSDL', async () => {
-        await queryEndpoint('http://www.webservicex.net/Astronomical.asmx?WSDL', `
-            mutation {
-                ChangeAstronomicalUnit(AstronomicalValue: 1.24, fromAstronomicalUnit: "lightyear", toAstronomicalUnit: "parsec")
-            }
-            `, (data) => {
-                expect(data.ChangeAstronomicalUnit).to.exist;
-                expect(data.ChangeAstronomicalUnit).to.equal(0.3801865856585023);
-            });
-    }).timeout(5000);
-
-    // @todo
     it('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL', async () => {
         await queryEndpoint('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL', `
             fragment CountryInfo on TCountryInfo {
@@ -156,6 +134,38 @@ describe('call soap endpoints', () => {
                 expect(data.FullCountryInfo.Languages.tLanguage).to.exist;
                 expect(data.FullCountryInfo.Languages.tLanguage[0]).to.exist;
             });
+    }).timeout(5000);
+
+    it('http://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL', async () => {
+        await queryEndpoint('http://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL', `
+            mutation {
+                NumberToWords(ubiNum: 1234)
+            }
+            `, (data) => {
+                expect(data.NumberToWords).to.exist;
+                expect(data.NumberToWords).to.equal('one thousand two hundred and thirty four');
+            });
+    }).timeout(5000);
+
+    // @todo resolve type Astronomical
+    it('http://www.webservicex.net/Astronomical.asmx?WSDL', async () => {
+        await queryEndpoint('http://www.webservicex.net/Astronomical.asmx?WSDL', `
+            mutation {
+                ChangeAstronomicalUnit(AstronomicalValue: 1.24, fromAstronomicalUnit: "lightyear", toAstronomicalUnit: "parsec")
+            }
+            `, (data) => {
+                expect(data.ChangeAstronomicalUnit).to.exist;
+                expect(data.ChangeAstronomicalUnit).to.equal(0.3801865856585023);
+            });
+    }).timeout(5000);
+
+    // @todo resolve type CurrencyName
+    it('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
+        await queryEndpoint('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', `
+            mutation {
+                ConversionRate(FromCurrency: "AFA", ToCurrency: "ALL")
+            }
+        `);
     }).timeout(5000);
 
     // @todo
