@@ -3,17 +3,17 @@ import * as chaiAsPromised from 'chai-as-promised';
 import { expect } from 'chai';
 import { after, afterEach, before, beforeEach, describe, fail, it } from 'mocha';
 import { defaultOutputNameResolver, defaultInterfaceNameResolver, defaultInputNameResolver } from '../../../src/soap2graphql/name-resolver';
-import { DefaultScalarTypeResolver } from '../../../src/soap2graphql/scalar-type-resolver';
 import { GraphQLInt, GraphQLString, GraphQLBoolean, GraphQLFloat } from 'graphql/type/scalars';
 import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-iso-date';
+import { DefaultTypeResolver } from '../../../src/soap2graphql/custom-type-resolver';
 
 chai.use(chaiAsPromised);
 
-describe('default scalar type resolver', () => {
+describe('DefaultTypeResolver', () => {
 
     it('resolves default scalar types', async () => {
 
-        const resolver = new DefaultScalarTypeResolver();
+        const resolver = new DefaultTypeResolver();
 
         expect(resolver.resolve(null)).to.not.exist;
         expect(resolver.resolve(undefined)).to.not.exist;

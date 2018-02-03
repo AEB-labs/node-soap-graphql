@@ -1,6 +1,6 @@
 import { SchemaOptions } from './soap2graphql';
 import { defaultOutputNameResolver, defaultInterfaceNameResolver, defaultInputNameResolver } from './name-resolver';
-import { DefaultScalarTypeResolver } from './scalar-type-resolver';
+import { DefaultTypeResolver } from './custom-type-resolver';
 import { GraphQLSchemaConfig } from 'graphql/type/schema';
 import { GraphQLString } from 'graphql/type/scalars';
 import { SoapEndpoint, SoapService, SoapPort, SoapOperation, SoapField, SoapType, SoapObjectType, SoapOperationArg } from './soap-endpoint';
@@ -33,8 +33,8 @@ export class SchemaResolver {
             options.inputNameResolver = defaultInputNameResolver;
         }
 
-        if (!options.scalarResolver) {
-            options.scalarResolver = new DefaultScalarTypeResolver();
+        if (!options.customResolver) {
+            options.customResolver = new DefaultTypeResolver();
         }
 
         return options;
@@ -211,10 +211,10 @@ class GraphqlOutputFieldResolver {
         }
 
         if (typeof soapType === 'string') {
-            const scalarType: GraphQLScalarType = this.options.scalarResolver.resolve(soapType);
-            if (!!scalarType) {
-                this.alreadyResolvedOutputTypes.set(soapType, scalarType);
-                return scalarType;
+            const customType: GraphQLOutputType = this.options.customResolver.outputType(soapType);
+            if (!!customType) {
+                this.alreadyResolvedOutputTypes.set(soapType, customType);
+                return customType;
             }
         } else {
             const objectType: GraphQLObjectType = this.createObjectType(soapType);
@@ -341,10 +341,10 @@ class GraphqlInputFieldResolver {
         }
 
         if (typeof soapType === 'string') {
-            const scalarType: GraphQLScalarType = this.options.scalarResolver.resolve(soapType);
-            if (!!scalarType) {
-                this.alreadyResolved.set(soapType, scalarType);
-                return scalarType;
+            const customType: GraphQLInputType = this.options.customResolver.inputType(soapType);
+            if (!!customType) {
+                this.alreadyResolved.set(soapType, customType);
+                return customType;
             }
         } else {
             const objectType: GraphQLInputObjectType = this.createObjectType(soapType);

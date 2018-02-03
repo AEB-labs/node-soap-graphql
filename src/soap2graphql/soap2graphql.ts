@@ -1,4 +1,4 @@
-import { ScalarTypeResolver } from './scalar-type-resolver';
+import { CustomTypeResolver } from './custom-type-resolver';
 import { NameResolver } from './name-resolver';
 import { SoapEndpoint } from './soap-endpoint';
 import { SoapCaller } from './soap-caller';
@@ -9,7 +9,7 @@ import { Logger } from './logger';
 export type SchemaOptions = {
     includeServices?: boolean;
     includePorts?: boolean;
-    scalarResolver?: ScalarTypeResolver;
+    customResolver?: CustomTypeResolver;
     outputNameResolver?: NameResolver;
     interfaceNameResolver?: NameResolver;
     inputNameResolver?: NameResolver;

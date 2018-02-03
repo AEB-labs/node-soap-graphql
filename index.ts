@@ -1,7 +1,7 @@
 import { soapGraphqlSchema, SoapGraphQlOptions } from './src/soap-graphql';
 import { SoapCaller } from './src/soap2graphql/soap-caller';
 import { NameResolver } from './src/soap2graphql/name-resolver';
-import { ScalarTypeResolver } from './src/soap2graphql/scalar-type-resolver';
+import { CustomTypeResolver } from './src/soap2graphql/scalar-type-resolver';
 import { createSoapClient } from './src/node-soap/node-soap';
 
 export {
@@ -9,5 +9,5 @@ export {
     soapGraphqlSchema,
     SoapCaller,
     NameResolver,
-    ScalarTypeResolver,
+    CustomTypeResolver,
 };
