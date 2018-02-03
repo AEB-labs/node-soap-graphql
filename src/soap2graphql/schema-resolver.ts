@@ -36,7 +36,7 @@ export class SchemaResolver {
         if (!options.scalarResolver) {
             options.scalarResolver = new DefaultScalarTypeResolver();
         }
-        
+
         return options;
     }
 
@@ -164,22 +164,12 @@ export class SchemaResolver {
     }
 
     createSoapOperationFieldArgs(operation: SoapOperation): GraphQLFieldConfigArgumentMap {
-
         const args: GraphQLFieldConfigArgumentMap = {};
-
-        const inputs: SoapOperationArg[] = operation.args();
-        if (inputs.length == 1) {
-            args[inputs[0].name] = {
-                type: new GraphQLNonNull(this.inputResolver.resolve(inputs[0])),
+        operation.args().forEach((soapField: SoapField) => {
+            args[soapField.name] = {
+                type: this.inputResolver.resolve(soapField),
             };
-        } else {
-            operation.args().forEach((soapField: SoapField) => {
-                args[soapField.name] = {
-                    type: this.inputResolver.resolve(soapField),
-                };
-            })
-        }
-
+        })
         return args;
     }
 
@@ -194,8 +184,6 @@ export class SchemaResolver {
     }
 
 }
-
-// @todo should be possible to make common superclass for field-resolvers
 
 class GraphqlOutputFieldResolver {
 
