@@ -5,17 +5,19 @@ import { after, afterEach, before, beforeEach, describe, fail, it, xit } from 'm
 import { soapGraphqlSchema } from '../src/soap-graphql';
 import { GraphQLSchema } from 'graphql/type/schema';
 import { introspectionQuery } from 'graphql/utilities/introspectionQuery';
-import { graphql, printSchema } from 'graphql';
+import { graphql, printSchema, GraphQLInputType, GraphQLEnumType, GraphQLEnumValueConfigMap } from 'graphql';
 import { inspect } from 'util';
+import { CustomTypeResolver, DefaultTypeResolver } from '../src/soap2graphql/custom-type-resolver';
+import { GraphQLBoolean } from 'graphql/type/scalars';
 
 chai.use(chaiAsPromised);
 
 describe('call soap endpoints', () => {
 
-    async function callEndpoint(url: string): Promise<GraphQLSchema> {
+    async function callEndpoint(url: string, resolver?: CustomTypeResolver): Promise<GraphQLSchema> {
 
         const schema: GraphQLSchema = await soapGraphqlSchema({
-            createClient: { url: url }, debug: false, warnings: true,
+            createClient: { url: url }, debug: false, warnings: true, schemaOptions: { customResolver: resolver }
         });
         // console.log(`schema of '${url}'`, printSchema(schema));
 
@@ -36,9 +38,9 @@ describe('call soap endpoints', () => {
         return schema;
     }
 
-    async function queryEndpoint(url: string, query: string, check?: (data: any) => void) {
+    async function queryEndpoint(url: string, query: string, check?: (data: any) => void, resolver?: CustomTypeResolver) {
 
-        const schema: GraphQLSchema = await callEndpoint(url);
+        const schema: GraphQLSchema = await callEndpoint(url, resolver);
 
         const res: any = await graphql(schema, query);
         // console.log(`result of '${url}'`, res);
@@ -147,25 +149,65 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    // @todo resolve type Astronomical
     it('http://www.webservicex.net/Astronomical.asmx?WSDL', async () => {
+
+        class AstronomicalResolver extends DefaultTypeResolver {
+
+            inputType(typeName: string): GraphQLInputType {
+                if (typeName === 'string|meters,kilometers,miles,AstronmicalunitAU,lightyear,parsec') {
+                    return new GraphQLEnumType({
+                        name: 'AstronomicalUnit',
+                        values: {
+                            'meters': {},
+                            'kilometers': {},
+                            'miles': {},
+                            'AstronmicalunitAU': {},
+                            'lightyear': {},
+                            'parsec': {},
+                        }
+                    })
+                }
+                return super.inputType(typeName);
+            }
+
+        }
+
         await queryEndpoint('http://www.webservicex.net/Astronomical.asmx?WSDL', `
             mutation {
-                ChangeAstronomicalUnit(AstronomicalValue: 1.24, fromAstronomicalUnit: "lightyear", toAstronomicalUnit: "parsec")
+                ChangeAstronomicalUnit(AstronomicalValue: 1.24, fromAstronomicalUnit: lightyear, toAstronomicalUnit: parsec)
             }
             `, (data) => {
                 expect(data.ChangeAstronomicalUnit).to.exist;
                 expect(data.ChangeAstronomicalUnit).to.equal(0.3801865856585023);
-            });
+            }, new AstronomicalResolver());
     }).timeout(5000);
 
-    // @todo resolve type CurrencyName
     it('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
+
+        class CurrencyResolver extends DefaultTypeResolver {
+
+            inputType(typeName: string): GraphQLInputType {
+                if (!! typeName && typeName.startsWith('string|AFA,ALL,DZD,ARS,AWG,AUD,BSD,BHD,BDT,BBD')) {
+                    const values: GraphQLEnumValueConfigMap = {};
+                    typeName.substring(7).split(',').forEach((currencyCode: string) => {
+                        values[currencyCode] = {};
+                    })
+
+                    return new GraphQLEnumType({
+                        name: 'Currency',
+                        values: values
+                    })
+                }
+                return super.inputType(typeName);
+            }
+
+        }
+
         await queryEndpoint('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', `
             mutation {
-                ConversionRate(FromCurrency: "AFA", ToCurrency: "ALL")
+                ConversionRate(FromCurrency: AFA, ToCurrency: ALL)
             }
-        `);
+        `, null, new CurrencyResolver());
     }).timeout(5000);
 
     // @todo

@@ -27,8 +27,8 @@ export class DefaultTypeResolver implements CustomTypeResolver {
     date = GraphQLDate;
     time = GraphQLTime;
 
-    resolve(wsdlTypeName: string): GraphQLScalarType {
-        return this[wsdlTypeName];
+    resolve(typeName: string): GraphQLScalarType {
+        return this[typeName];
     }
 
     outputType(typeName: string): GraphQLOutputType {
