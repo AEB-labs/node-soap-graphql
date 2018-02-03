@@ -6,8 +6,8 @@ import { inspect } from 'util';
 import { Logger } from '../soap2graphql/logger';
 
 export function createSoapCaller(soapClient: NodeSoapClient, logger: Logger): SoapCaller {
-    return async (operation: SoapOperation, graphQlSource: any, graphQlArgs: { [argName: string]: any }, graphQlContext: any, graphQlInfo: GraphQLResolveInfo) => {
-        return await callSoap(soapClient, operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo, logger);
+    return async (operation: SoapOperation, graphqlSource: any, graphqlArgs: { [argName: string]: any }, graphqlContext: any, graphqlInfo: GraphQLResolveInfo) => {
+        return await callSoap(soapClient, operation, graphqlSource, graphqlArgs, graphqlContext, graphqlInfo, logger);
     };
 }
 
