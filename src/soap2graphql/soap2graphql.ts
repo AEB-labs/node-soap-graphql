@@ -4,6 +4,7 @@ import { SoapEndpoint } from './soap-endpoint';
 import { SoapCaller } from './soap-caller';
 import { GraphQLSchemaConfig } from 'graphql/type/schema';
 import { SchemaResolver } from './schema-resolver';
+import { Logger } from './logger';
 
 export type SchemaOptions = {
     includeServices?: boolean;
@@ -14,6 +15,6 @@ export type SchemaOptions = {
     inputNameResolver?: NameResolver;
 }
 
-export function createSchemaConfig(endpoint: SoapEndpoint, soapCaller: SoapCaller, options: SchemaOptions = {}): GraphQLSchemaConfig {
-    return new SchemaResolver(endpoint, soapCaller, options).resolve();
+export function createSchemaConfig(endpoint: SoapEndpoint, soapCaller: SoapCaller, options: SchemaOptions = {}, logger: Logger): GraphQLSchemaConfig {
+    return new SchemaResolver(endpoint, soapCaller, options, logger).resolve();
 }

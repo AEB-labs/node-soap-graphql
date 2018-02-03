@@ -1,7 +1,8 @@
 import { SoapType, SoapOperationArg, SoapObjectType, SoapField } from "../soap2graphql/soap-endpoint";
 import { inspect } from "util";
 import { NodeSoapOperation, NodeSoapEndpoint } from "./node-soap-endpoint";
-import { NodeSoapClient } from "./node-soap";
+import { NodeSoapClient, NodeSoapWsdl } from "./node-soap";
+import { Logger, LateResolvedMessage } from "../soap2graphql/logger";
 
 // an content object ... basically a plain JS object
 type WsdlContent = { [key: string]: any };
@@ -36,26 +37,29 @@ type XsdFieldDefinition = {
     $maxOccurs?: 'unbounded' | string;
 };
 
-export class NodeSoapResolver {
+export class NodeSoapWsdlResolver {
 
     private alreadyResolved: Map<string, SoapType> = new Map();
 
-    constructor(private endpoint: NodeSoapEndpoint, private debug: boolean) {
+    constructor(private wsdl: NodeSoapWsdl, private logger: Logger) {
     }
 
-    get soapClient(): NodeSoapClient {
-        return this.endpoint.soapClient;
+    warn(message: LateResolvedMessage): void {
+        this.logger.warn(message);
+    }
+
+    debug(message: LateResolvedMessage): void {
+        this.logger.debug(message);
     }
 
     createOperationArgs(operation: NodeSoapOperation): SoapOperationArg[] {
 
         const inputContent: WsdlInputContent = operation.content()['input'];
 
-        if (!!this.debug) {
-            console.log(`creating args for operation '${operation.name()}' from input content '${inspect(inputContent, false, 5)}'`);
-        }
+        this.debug(() => `creating args for operation '${operation.name()}' from content '${inspect(inputContent, false, 5)}'`);
+
         if (!inputContent) {
-            console.log(`no input definition for operation ${operation.name()}`);
+            this.warn(() => `no input definition for operation '${operation.name()}'`);
         }
 
         // inputContent===null -> argNames===[]
@@ -70,9 +74,11 @@ export class NodeSoapResolver {
 
     private createOperationArg(operation: NodeSoapOperation, argWsdlFieldName: string, argContent: WsdlArgContent): SoapOperationArg {
 
+        this.debug(() => `creating arg for operation '${operation.name()}' from content '${inspect(argContent, false, 5)}'`);
+
         const parsedArgName: { name: string, isList: boolean } = parseWsdlFieldName(argWsdlFieldName);
 
-        const inputType: SoapType = this.resolveContentToSoapType(argContent, `arg ${argWsdlFieldName} of operation ${operation.name()}`);
+        const inputType: SoapType = this.resolveContentToSoapType(argContent, `arg '${argWsdlFieldName}' of operation '${operation.name()}'`);
 
         const input: SoapOperationArg = {
             name: parsedArgName.name,
@@ -84,24 +90,16 @@ export class NodeSoapResolver {
 
     createOperationOutput(operation: NodeSoapOperation): { type: { type: SoapType, isList: boolean }; resultField: string } {
 
-        function emptyOutput() {
-            return {
-                type: { type: 'string', isList: false }, resultField: null
-            };
-        }
-
         const outputContent: WsdlOutputContent = operation.content()['output'];
 
-        if (!!this.debug) {
-            console.log(`creating output for operation '${operation.name()}' from output content '${inspect(outputContent, false, 5)}'`);
-        }
+        this.debug(() => `creating output for operation '${operation.name()}' from content '${inspect(outputContent, false, 5)}'`);
 
         // determine type and field name
         let resultType: SoapType;
         let resultFieldName: string;
-        const ownerStringForLog: string = `output of operation ${operation.name()}`;
+        const ownerStringForLog: string = `output of operation '${operation.name()}'`;
         if (!outputContent) {
-            console.log(`no output definition for operation ${operation.name()}, using 'string'`);
+            this.warn(() => `no definition for output type of operation '${operation.name()}', using 'string'`);
             resultType = this.resolveContentToSoapType('string', ownerStringForLog);
 
         } else {
@@ -118,14 +116,14 @@ export class NodeSoapResolver {
                 if (outputContentKeys.length > 1) {
                     // content has multiple fields, use the first one
                     // @todo maybe better build an extra type for this case, but how to name it?
-                    console.log(`multiple result fields in output definition operation ${operation.name()}, using first one`);
+                    this.warn(() => `multiple result fields in output definition of operation '${operation.name()}', using first one`);
                 }
 
                 resultFieldName = outputContentKeys[0];
                 const resultContent: WsdlResultContent = outputContent[resultFieldName];
 
                 if (!resultContent) {
-                    console.log(`no type definition for result field '${resultFieldName}' in output definition for operation ${operation.name()}, using 'string'`);
+                    this.warn(() => `no type definition for result field '${resultFieldName}' in output definition for operation '${operation.name()}', using 'string'`);
                     resultType = this.resolveContentToSoapType('string', ownerStringForLog);
 
                 } else {
@@ -148,14 +146,12 @@ export class NodeSoapResolver {
 
     private resolveContentToSoapType(typeContent: WsdlTypeContent, ownerStringForLog: string): SoapType {
 
-        if (!!this.debug) {
-            console.log(`resolving soap type for ${ownerStringForLog} from content '${inspect(typeContent, false, 3)}'`);
-        }
+        this.debug(() => `resolving soap type for ${ownerStringForLog} from content '${inspect(typeContent, false, 3)}'`);
 
         // determine name of the type
         let wsdlTypeName;
         if (!typeContent) {
-            console.log(`no type definition for ${ownerStringForLog}, using 'string'`);
+            this.warn(() => `no type definition for ${ownerStringForLog}, using 'string'`);
             wsdlTypeName = 'string';
 
         } else if (typeof typeContent === 'string') {
@@ -165,7 +161,7 @@ export class NodeSoapResolver {
         } else {
             wsdlTypeName = this.findTypeName(typeContent);
             if (!wsdlTypeName) {
-                console.log(`no type name found for ${ownerStringForLog}, using 'string'`);
+                this.warn(() => `no type name found for ${ownerStringForLog}, using 'string'`);
                 wsdlTypeName = 'string';
             }
         }
@@ -176,7 +172,7 @@ export class NodeSoapResolver {
     }
 
     private findTypeName(content: WsdlTypeContent): string {
-        const types = this.soapClient.wsdl.definitions.descriptions.types;
+        const types = this.wsdl.definitions.descriptions.types;
         for (let key in types) {
             if (types[key] === content) {
                 return key;
@@ -187,65 +183,55 @@ export class NodeSoapResolver {
 
     resolveWsdlNameToSoapType(namespace: string, wsdlTypeName: string, ownerStringForLog: string): SoapType {
 
-        if (!!this.debug) {
-            console.log(`resolving soap type for namespace '${wsdlTypeName}', type name '${wsdlTypeName}' of ${ownerStringForLog}`);
-        }
+        this.debug(() => `resolving soap type for ${ownerStringForLog} from namespace '${namespace}', type name '${wsdlTypeName}'`);
 
         // lookup cache; this accomplishes three things:
         // 1) an incredible boost in performance, must be at least 3ns, !!hax0r!!11
         // 2) every type definition (primitive and complex) has only one instance of SoapType
         // 3) resolve circular dependencies between types
         if (this.alreadyResolved.has(namespace + wsdlTypeName)) {
-            if (!!this.debug) {
-                console.log(`resolved soap type for namespace: '${namespace}', typeName: '${wsdlTypeName}' from cache`);
-            }
+            this.debug(() => `resolved soap type for namespace: '${namespace}', typeName: '${wsdlTypeName}' from cache`);
             return this.alreadyResolved.get(namespace + wsdlTypeName);
         }
 
         // get the defition of the type from the schema section in the WSDL
-        const typeDefinition: XsdTypeDefinition = this.findXsdTypeDefinition(namespace, wsdlTypeName);
+        const xsdTypeDefinition: XsdTypeDefinition = this.findXsdTypeDefinition(namespace, wsdlTypeName);
 
-        if (!typeDefinition) {
+        if (!xsdTypeDefinition) {
             // has no type definition
             // --> primitive type, e.g. 'string'
-            const soapType: string = withoutNamespace(wsdlTypeName);
+            const soapType: string = wsdlTypeName;
             this.alreadyResolved.set(namespace + wsdlTypeName, soapType);
 
-            if (!!this.debug) {
-                console.log(`resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to primitive '${inspect(soapType, false, 3)}'`);
-            }
+            this.debug(() => `resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to primitive type '${soapType}'`);
 
             return soapType;
-        } else {
-            const soapType: SoapObjectType = this.createTypeHead(namespace, typeDefinition);
-            this.alreadyResolved.set(namespace + wsdlTypeName, soapType);
-            // resolve bindings (field types, base type) after type has been registered to resolve circular dependencies
-            this.resolveTypeBody(soapType, namespace, typeDefinition);
 
-            if (!!this.debug) {
-                console.log(`resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to object type '${inspect(soapType, false, 3)}'`);
-            }
+        } else {
+            // create a new object type
+            const soapType: SoapObjectType = {
+                name: xsdTypeDefinition.$name,
+                base: null,
+                fields: null,
+            };
+            this.alreadyResolved.set(namespace + wsdlTypeName, soapType);
+
+            // resolve bindings (field types, base type) after type has been registered to resolve circular dependencies
+            this.resolveTypeBody(soapType, namespace, xsdTypeDefinition);
+
+            this.debug(() => `resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to object type '${inspect(soapType, false, 3)}'`);
 
             return soapType;
         }
     }
 
     private findXsdTypeDefinition(namespace: string, typeName: string): XsdTypeDefinition {
-        return this.soapClient.wsdl.findSchemaObject(namespace, typeName)
-    }
-
-    private createTypeHead(namespace: string, definition: XsdTypeDefinition): SoapObjectType {
-
-        const typeName = definition.$name;
-
-        return {
-            name: withoutNamespace(typeName),
-            base: null,
-            fields: null,
-        };
+        return this.wsdl.findSchemaObject(namespace, typeName)
     }
 
     private resolveTypeBody(soapType: SoapObjectType, namespace: string, typeDefinition: XsdTypeDefinition): void {
+
+        this.debug(() => `resolving body of soap type '${soapType.name}' from namespace '${namespace}', definition '${inspect(typeDefinition, false, 9)}'`);
 
         const typeName: string = typeDefinition.$name;
 
@@ -263,20 +249,20 @@ export class NodeSoapResolver {
             baseTypeName = withoutNamespace(extension.$base);
             fields = sequence.children || [];
         } else {
-            console.log(`cannot parse fields for type ${typeName}`, typeDefinition);
+            this.warn(() => `cannot parse fields for soap type '${typeName}', leaving fields empty`);
             fields = [];
         }
 
         const soapFields: SoapField[] = fields.map((field: XsdFieldDefinition) => {
             return {
                 name: field.$name,
-                type: this.resolveWsdlNameToSoapType(field.$targetNamespace, withoutNamespace(field.$type), ''),
+                type: this.resolveWsdlNameToSoapType(field.$targetNamespace, withoutNamespace(field.$type), `field '${field.$name}' of soap type '${soapType.name}'`),
                 isList: !!field.$maxOccurs && field.$maxOccurs === 'unbounded',
             }
         });
 
         // @todo in XSD it is possible to inherit a type from a primitive ... may have to handle this
-        const baseType: SoapObjectType = !baseTypeName ? null : <SoapObjectType>this.resolveWsdlNameToSoapType(namespace, baseTypeName, '');
+        const baseType: SoapObjectType = !baseTypeName ? null : <SoapObjectType>this.resolveWsdlNameToSoapType(namespace, baseTypeName, `base type of soap type '${soapType.name}'`);
 
         soapType.fields = soapFields;
         soapType.base = baseType;

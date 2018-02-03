@@ -1,18 +1,19 @@
 import { SoapEndpoint, SoapType, SoapObjectType, SoapField, SoapService, SoapPort, SoapOperation, SoapOperationArg } from '../soap2graphql/soap-endpoint';
 import { NodeSoapClient, NodeSoapOptions } from './node-soap';
 import { inspect } from 'util';
-import { NodeSoapResolver } from './node-soap-resolver';
+import { NodeSoapWsdlResolver } from './node-soap-resolver';
+import { Logger } from '../soap2graphql/logger';
 
-export function createSoapEndpoint(soapClient: NodeSoapClient, debug: boolean = false): SoapEndpoint {
-    return new NodeSoapEndpoint(soapClient, debug);
+export function createSoapEndpoint(soapClient: NodeSoapClient, logger: Logger): SoapEndpoint {
+    return new NodeSoapEndpoint(soapClient, logger);
 }
 
 export class NodeSoapEndpoint implements SoapEndpoint {
 
-    private _resolver: NodeSoapResolver;
+    private _resolver: NodeSoapWsdlResolver;
 
-    constructor(public soapClient: NodeSoapClient, public debug: boolean) {
-        this._resolver = new NodeSoapResolver(this, debug);
+    constructor(private soapClient: NodeSoapClient, logger: Logger) {
+        this._resolver = new NodeSoapWsdlResolver(this.soapClient.wsdl, logger);
     }
 
     description(): string {
@@ -28,7 +29,7 @@ export class NodeSoapEndpoint implements SoapEndpoint {
         return services;
     }
 
-    resolver(): NodeSoapResolver {
+    resolver(): NodeSoapWsdlResolver {
         return this._resolver;
     }
 

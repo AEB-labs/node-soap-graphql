@@ -1,6 +1,7 @@
-import { createClient, BasicAuthSecurity, Client, IOptions } from 'soap';
+import { createClient, BasicAuthSecurity, Client, IOptions, WSDL } from 'soap';
 
 export type NodeSoapClient = any | Client;
+export type NodeSoapWsdl = any | WSDL;
 
 export type NodeSoapOptions = {
     options?: IOptions;

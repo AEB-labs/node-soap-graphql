@@ -3,10 +3,11 @@ import { SoapCaller } from '../soap2graphql/soap-caller';
 import { NodeSoapClient } from './node-soap';
 import { GraphQLResolveInfo } from 'graphql/type/definition';
 import { inspect } from 'util';
+import { Logger } from '../soap2graphql/logger';
 
-export function createSoapCaller(soapClient: NodeSoapClient, debug: boolean): SoapCaller {
+export function createSoapCaller(soapClient: NodeSoapClient, logger: Logger): SoapCaller {
     return async (operation: SoapOperation, graphQlSource: any, graphQlArgs: { [argName: string]: any }, graphQlContext: any, graphQlInfo: GraphQLResolveInfo) => {
-        return await callSoap(soapClient, operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo, debug);
+        return await callSoap(soapClient, operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo, logger);
     };
 }
 
@@ -17,11 +18,9 @@ function callSoap<S, C>(
     args: { [argName: string]: any },
     context: C,
     info: GraphQLResolveInfo,
-    debug: boolean): Promise<any> {
+    logger: Logger): Promise<any> {
 
-    if (!!debug) {
-        console.log(`call operation ${operation.name()} with args ${inspect(args, false, 5)}`);
-    }
+    logger.debug(() => `call operation ${operation.name()} with args ${inspect(args, false, 5)}`);
 
     const requestMessage = {};
     Array.from(Object.keys(args)).forEach(key => {
@@ -32,9 +31,7 @@ function callSoap<S, C>(
             if (err) {
                 reject(err);
             } else {
-                if (!!debug) {
-                    console.log(`operation ${operation.name()} returned ${inspect(res, false, 5)}`);
-                }
+                logger.debug(() => `operation ${operation.name()} returned ${inspect(res, false, 5)}`);
                 if (!operation.resultField()) {
                     // void operation
                     resolve(!res ? null : JSON.stringify(res));

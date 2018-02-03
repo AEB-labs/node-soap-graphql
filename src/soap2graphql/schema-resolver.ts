@@ -7,6 +7,7 @@ import { SoapEndpoint, SoapService, SoapPort, SoapOperation, SoapField, SoapType
 import { SoapCaller } from './soap-caller';
 import { inspect } from 'util';
 import { GraphQLObjectType, Thunk, GraphQLFieldConfigMap, GraphQLFieldConfig, GraphQLFieldConfigArgumentMap, GraphQLOutputType, GraphQLFieldResolver, GraphQLNonNull, GraphQLResolveInfo, GraphQLInterfaceType, GraphQLList, GraphQLScalarType, GraphQLObjectTypeConfig, GraphQLInterfaceTypeConfig, GraphQLInputType, GraphQLInputObjectType, GraphQLInputObjectTypeConfig, GraphQLInputFieldConfigMap } from 'graphql';
+import { Logger } from './logger';
 
 export class SchemaResolver {
 
@@ -15,7 +16,7 @@ export class SchemaResolver {
     private outputResolver: GraphQlOutputFieldResolver = null;
     private inputResolver: GraphQlInputFieldResolver = null;
 
-    constructor(private soap: SoapEndpoint, private soapCaller: SoapCaller, options: SchemaOptions) {
+    constructor(private soap: SoapEndpoint, private soapCaller: SoapCaller, options: SchemaOptions, private logger: Logger) {
         this.options = this.defaultOptions(options);
     }
 
@@ -35,13 +36,14 @@ export class SchemaResolver {
         if (!options.scalarResolver) {
             options.scalarResolver = new DefaultScalarTypeResolver();
         }
+        
         return options;
     }
 
     resolve(): GraphQLSchemaConfig {
 
-        this.outputResolver = new GraphQlOutputFieldResolver(this.options);
-        this.inputResolver = new GraphQlInputFieldResolver(this.options);
+        this.outputResolver = new GraphQlOutputFieldResolver(this.options, this.logger);
+        this.inputResolver = new GraphQlInputFieldResolver(this.options, this.logger);
 
         return {
             query: this.createQueryObject(),
@@ -200,7 +202,7 @@ class GraphQlOutputFieldResolver {
     private alreadyResolvedOutputTypes: Map<SoapType, GraphQLOutputType> = new Map();
     private alreadyResolvedInterfaceTypes: Map<SoapType, GraphQLInterfaceType> = new Map();
 
-    constructor(private options: SchemaOptions) {
+    constructor(private options: SchemaOptions, private logger: Logger) {
     }
 
     resolve(input: { type: SoapType; isList: boolean }): GraphQLOutputType {
@@ -234,7 +236,7 @@ class GraphQlOutputFieldResolver {
             }
         }
 
-        console.warn(`could not resolve output type '${soapType}'; using GraphQLString instead`);
+        this.logger.warn(() => `could not resolve output type '${soapType}'; using GraphQLString instead`);
         this.alreadyResolvedOutputTypes.set(soapType, GraphQLString);
         return GraphQLString;
     }
@@ -330,7 +332,7 @@ class GraphQlInputFieldResolver {
 
     private alreadyResolved: Map<SoapType, GraphQLInputType> = new Map();
 
-    constructor(private options: SchemaOptions) {
+    constructor(private options: SchemaOptions, private logger: Logger) {
     }
 
     resolve(input: { type: SoapType; isList: boolean }): GraphQLInputType {
@@ -364,7 +366,7 @@ class GraphQlInputFieldResolver {
             }
         }
 
-        console.warn(`could not resolve input type '${soapType}'; using GraphQLString`);
+        this.logger.warn(() => `could not resolve input type '${soapType}'; using GraphQLString`);
         this.alreadyResolved.set(soapType, GraphQLString);
         return GraphQLString;
     }
