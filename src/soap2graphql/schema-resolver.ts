@@ -13,8 +13,8 @@ export class SchemaResolver {
 
     private readonly options: SchemaOptions;
 
-    private outputResolver: GraphQlOutputFieldResolver = null;
-    private inputResolver: GraphQlInputFieldResolver = null;
+    private outputResolver: GraphqlOutputFieldResolver = null;
+    private inputResolver: GraphqlInputFieldResolver = null;
 
     constructor(private soap: SoapEndpoint, private soapCaller: SoapCaller, options: SchemaOptions, private logger: Logger) {
         this.options = this.defaultOptions(options);
@@ -42,8 +42,8 @@ export class SchemaResolver {
 
     resolve(): GraphQLSchemaConfig {
 
-        this.outputResolver = new GraphQlOutputFieldResolver(this.options, this.logger);
-        this.inputResolver = new GraphQlInputFieldResolver(this.options, this.logger);
+        this.outputResolver = new GraphqlOutputFieldResolver(this.options, this.logger);
+        this.inputResolver = new GraphqlInputFieldResolver(this.options, this.logger);
 
         return {
             query: this.createQueryObject(),
@@ -197,7 +197,7 @@ export class SchemaResolver {
 
 // @todo should be possible to make common superclass for field-resolvers
 
-class GraphQlOutputFieldResolver {
+class GraphqlOutputFieldResolver {
 
     private alreadyResolvedOutputTypes: Map<SoapType, GraphQLOutputType> = new Map();
     private alreadyResolvedInterfaceTypes: Map<SoapType, GraphQLInterfaceType> = new Map();
@@ -328,7 +328,7 @@ class GraphQlOutputFieldResolver {
 
 }
 
-class GraphQlInputFieldResolver {
+class GraphqlInputFieldResolver {
 
     private alreadyResolved: Map<SoapType, GraphQLInputType> = new Map();
 

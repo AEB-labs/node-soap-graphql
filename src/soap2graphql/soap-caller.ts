@@ -7,9 +7,9 @@ import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 export type SoapCaller =
     (
         operation: SoapOperation,
-        graphQlSource: any,
-        graphQlArgs: { [argName: string]: any },
-        graphQlContext: any,
-        graphQlInfo: GraphQLResolveInfo
+        graphqlSource: any,
+        graphqlArgs: { [argName: string]: any },
+        graphqlContext: any,
+        graphqlInfo: GraphQLResolveInfo
 
     ) => Promise<any>
