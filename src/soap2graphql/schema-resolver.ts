@@ -178,8 +178,14 @@ export class SchemaResolver {
     }
 
     createSoapOperationFieldResolver<TSource, TContext>(operation: SoapOperation): GraphQLFieldResolver<TSource, { [argName: string]: any }, TContext> {
-        return async (graphQlSource: TSource, graphQlArgs: { [argName: string]: any }, graphQlContext: TContext, graphQlInfo: GraphQLResolveInfo) => {
-            return await this.soapCaller(operation, graphQlSource, graphQlArgs, graphQlContext, graphQlInfo);
+        return async (graphqlSource: TSource, graphqlArgs: { [argName: string]: any }, graphqlContext: TContext, graphqlInfo: GraphQLResolveInfo) => {
+            return await this.soapCaller.call({
+                operation: operation,
+                graphqlSource: graphqlSource,
+                graphqlArgs: graphqlArgs,
+                graphqlContext: graphqlContext,
+                graphqlInfo: graphqlInfo,
+            });
         }
     }
 
