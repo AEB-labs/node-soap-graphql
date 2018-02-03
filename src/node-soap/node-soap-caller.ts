@@ -20,7 +20,7 @@ function callSoap<S, C>(
     info: GraphQLResolveInfo,
     logger: Logger): Promise<any> {
 
-    logger.debug(() => `call operation ${operation.name()} with args ${inspect(args, false, 5)}`);
+    logger.debug(() => `call operation '${operation.name()}' with args '${inspect(args, false, 5)}'`);
 
     const requestMessage = {};
     Array.from(Object.keys(args)).forEach(key => {
@@ -31,7 +31,7 @@ function callSoap<S, C>(
             if (err) {
                 reject(err);
             } else {
-                logger.debug(() => `operation ${operation.name()} returned ${inspect(res, false, 5)}`);
+                logger.debug(() => `operation '${operation.name()}' returned '${inspect(res, false, 5)}'`);
                 if (!operation.resultField()) {
                     // void operation
                     resolve(!res ? null : JSON.stringify(res));
