@@ -235,6 +235,7 @@ class GraphQlOutputFieldResolver {
         }
 
         console.warn(`could not resolve output type '${soapType}'; using GraphQLString instead`);
+        this.alreadyResolvedOutputTypes.set(soapType, GraphQLString);
         return GraphQLString;
     }
 
@@ -363,7 +364,8 @@ class GraphQlInputFieldResolver {
             }
         }
 
-        console.warn(`could not resolve input type '${soapType}'; using GraphQLString instead`);
+        console.warn(`could not resolve input type '${soapType}'; using GraphQLString`);
+        this.alreadyResolved.set(soapType, GraphQLString);
         return GraphQLString;
     }
 
