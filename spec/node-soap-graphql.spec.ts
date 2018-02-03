@@ -130,6 +130,35 @@ describe('call soap endpoints', () => {
     }).timeout(5000);
 
     // @todo
+    it('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL', async () => {
+        await queryEndpoint('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL', `
+            fragment CountryInfo on TCountryInfo {
+                sName
+                sCurrencyISOCode
+                Languages {
+                    tLanguage {
+                        sISOCode
+                        sName
+                    }
+                }
+            }
+
+            mutation {
+                FullCountryInfo(sCountryISOCode: "PL") {
+                    ...CountryInfo
+                }
+            }
+            `, (data) => {
+                expect(data.FullCountryInfo).to.exist;
+                expect(data.FullCountryInfo.sName).to.equal('Poland');
+                expect(data.FullCountryInfo.sCurrencyISOCode).to.equal('PLN');
+                expect(data.FullCountryInfo.Languages).to.exist;
+                expect(data.FullCountryInfo.Languages.tLanguage).to.exist;
+                expect(data.FullCountryInfo.Languages.tLanguage[0]).to.exist;
+            });
+    }).timeout(5000);
+
+    // @todo
     xit('http://soatest.parasoft.com/calculator.wsdl', async () => {
         await queryEndpoint('http://soatest.parasoft.com/calculator.wsdl', `
             mutation {
