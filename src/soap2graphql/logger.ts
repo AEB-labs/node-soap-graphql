@@ -1,5 +1,8 @@
 export type LateResolvedMessage = () => string;
 
+/**
+ * Definition of a trivial logger.
+ */
 export interface Logger {
     warn(message: LateResolvedMessage);
     debug(message: LateResolvedMessage);

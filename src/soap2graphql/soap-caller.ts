@@ -10,5 +10,8 @@ export type SoapCallInput = {
 }
 
 export interface SoapCaller {
+    /**
+     * Executes a SOAP call.
+     */
     call(input: SoapCallInput): Promise<any>;
 }

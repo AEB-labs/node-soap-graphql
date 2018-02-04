@@ -1,5 +1,9 @@
 
+/**
+ * SOAP endpoint defined by a WSDL.
+ */
 export interface SoapEndpoint {
+
     services(): SoapService[];
 
     /**
@@ -27,15 +31,34 @@ export interface SoapOperation {
     service(): SoapService;
     port(): SoapPort;
     name(): string;
+    /**
+     * Arguments that this operation accepts.
+     */
     args(): SoapOperationArg[];
+    /**
+     * Output that this operation provides if called.
+     */
     output(): { type: SoapType; isList: boolean };
+    /**
+     * The field in the SOAP output message that contains the actual output.
+     */
     resultField(): string;
 }
 
+/**
+ * A type declared in the WSDL.
+ */
 export type SoapType = SoapObjectType | SoapPrimitiveType;
 
+/**
+ * A primitive type in the WSDL - only defined by its name.
+ */
 export type SoapPrimitiveType = string;
 
+/**
+ * An object type in the WSDL.
+ * Defined by its name, fields and maybe a base type.
+ */
 export interface SoapObjectType {
     name: string;
     base: SoapObjectType;
