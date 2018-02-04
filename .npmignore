@@ -5,9 +5,9 @@
 # development sources
 node_modules/
 src/
+index.ts
 spec/
 tsconfig*
-**/*.ts
 **/*.log
 
 .npmignore
