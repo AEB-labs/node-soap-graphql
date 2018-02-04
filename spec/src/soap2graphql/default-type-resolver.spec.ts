@@ -2,8 +2,7 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { expect } from 'chai';
 import { after, afterEach, before, beforeEach, describe, fail, it } from 'mocha';
-import { defaultOutputNameResolver, defaultInterfaceNameResolver, defaultInputNameResolver } from '../../../src/soap2graphql/name-resolver';
-import { GraphQLInt, GraphQLString, GraphQLBoolean, GraphQLFloat } from 'graphql/type/scalars';
+import { GraphQLInt, GraphQLString, GraphQLBoolean, GraphQLFloat, GraphQLID } from 'graphql/type/scalars';
 import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-iso-date';
 import { DefaultTypeResolver } from '../../../src/soap2graphql/custom-type-resolver';
 
@@ -38,11 +37,12 @@ describe('DefaultTypeResolver', () => {
         expect(resolver.resolve('language')).to.equal(GraphQLString);
         expect(resolver.resolve('Name')).to.equal(GraphQLString);
         expect(resolver.resolve('NCName')).to.equal(GraphQLString);
-        expect(resolver.resolve('ID')).to.equal(GraphQLString);
         expect(resolver.resolve('IDREF')).to.equal(GraphQLString);
         expect(resolver.resolve('IDREFS')).to.equal(GraphQLString);
         expect(resolver.resolve('ENTITY')).to.equal(GraphQLString);
         expect(resolver.resolve('ENTITIES')).to.equal(GraphQLString);
+        
+        expect(resolver.resolve('ID')).to.equal(GraphQLID);
         
         expect(resolver.resolve('boolean')).to.equal(GraphQLBoolean);
         

@@ -1,5 +1,6 @@
-import { GraphQLScalarType, GraphQLString, GraphQLFloat, GraphQLBoolean, GraphQLInt, GraphQLOutputType, GraphQLInputType, GraphQLInterfaceType } from 'graphql';
+import { GraphQLScalarType, GraphQLString, GraphQLFloat, GraphQLBoolean, GraphQLInt, GraphQLOutputType, GraphQLInputType } from 'graphql';
 import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-iso-date';
+import { GraphQLID } from 'graphql/type/scalars';
 
 export interface CustomTypeResolver {
     outputType(typeName: string): GraphQLOutputType;
@@ -26,11 +27,12 @@ export class DefaultTypeResolver implements CustomTypeResolver {
     language = GraphQLString;
     Name = GraphQLString;
     NCName = GraphQLString;
-    ID = GraphQLString;
     IDREF = GraphQLString;
     IDREFS = GraphQLString;
     ENTITY = GraphQLString;
     ENTITIES = GraphQLString;
+
+    ID = GraphQLID;
 
     boolean = GraphQLBoolean;
 
