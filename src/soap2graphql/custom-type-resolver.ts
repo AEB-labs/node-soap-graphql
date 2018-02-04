@@ -6,16 +6,45 @@ export interface CustomTypeResolver {
     inputType(typeName: string): GraphQLInputType;
 }
 
-// @todo match with https://www.w3.org/TR/xmlschema-2/#built-in-primitive-datatypes
 export class DefaultTypeResolver implements CustomTypeResolver {
 
     string = GraphQLString;
     base64Binary = GraphQLString;
+    hexBinary = GraphQLString;
+    duration = GraphQLString;
+    gYearMonth = GraphQLString;
+    gYear = GraphQLString;
+    gMonthDay = GraphQLString;
+    gDay = GraphQLString;
+    gMonth = GraphQLString;
+    anyURI = GraphQLString;
+    QName = GraphQLString;
+    normalizedString = GraphQLString;
+    token = GraphQLString;
+    NMTOKEN = GraphQLString;
+    NMTOKENS = GraphQLString;
+    language = GraphQLString;
+    Name = GraphQLString;
+    NCName = GraphQLString;
+    ID = GraphQLString;
+    IDREF = GraphQLString;
+    IDREFS = GraphQLString;
+    ENTITY = GraphQLString;
+    ENTITIES = GraphQLString;
 
     boolean = GraphQLBoolean;
 
+    byte = GraphQLInt;
+    unsignedByte = GraphQLInt;
     short = GraphQLInt;
+    unsignedShort = GraphQLInt;
     int = GraphQLInt;
+    unsignedInt = GraphQLInt;
+    integer = GraphQLInt;
+    positiveInteger = GraphQLInt;
+    nonPositiveInteger = GraphQLInt;
+    negativeInteger = GraphQLInt;
+    nonNegativeInteger = GraphQLInt;
     long = GraphQLInt;
     unsignedLong = GraphQLInt;
 
