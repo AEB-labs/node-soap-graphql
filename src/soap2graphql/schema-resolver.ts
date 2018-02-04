@@ -16,7 +16,7 @@ export class SchemaResolver {
     private outputResolver: GraphqlOutputFieldResolver = null;
     private inputResolver: GraphqlInputFieldResolver = null;
 
-    constructor(private soap: SoapEndpoint, private soapCaller: SoapCaller, options: SchemaOptions, private logger: Logger) {
+    constructor(private soapEndpoint: SoapEndpoint, private soapCaller: SoapCaller, options: SchemaOptions, private logger: Logger) {
         this.options = this.defaultOptions(options);
     }
 
@@ -58,7 +58,7 @@ export class SchemaResolver {
                 'description': {
                     type: GraphQLString,
                     resolve: () => {
-                        return this.soap.description();
+                        return this.soapEndpoint.description();
                     }
                 }
             }
@@ -70,7 +70,7 @@ export class SchemaResolver {
         const fieldsThunk: Thunk<GraphQLFieldConfigMap<any, any>> = () => {
             const fields: GraphQLFieldConfigMap<any, any> = {};
 
-            this.soap.services().forEach((service: SoapService) => {
+            this.soapEndpoint.services().forEach((service: SoapService) => {
                 if (!!this.options.includeServices) {
                     fields[service.name()] = this.createSoapServiceField(service);
                 } else if (!!this.options.includePorts) {

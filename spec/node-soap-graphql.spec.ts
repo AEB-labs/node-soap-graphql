@@ -212,9 +212,21 @@ describe('call soap endpoints', () => {
     async function callEndpoint(options: SoapGraphqlOptions): Promise<GraphQLSchema> {
 
         const schema: GraphQLSchema = await soapGraphqlSchema(options);
-        // console.log(`schema of '${options.url}'`, printSchema(schema));
+        // console.log(`schema`, printSchema(schema));
 
-        expect(await graphql(schema, introspectionQuery)).to.exist;
+        // check that intorspection can be executed
+        const introspection = await graphql(schema, introspectionQuery);
+        // console.log(`introspection`, introspection);
+        expect(introspection).to.exist;
+
+        // check the description field
+        const description = await graphql(schema, `
+            {
+                description
+            }
+        `);
+        // console.log(`description`, description);
+        expect(description).to.exist;
 
         const errorRes = await graphql(schema, `
             mutation {
@@ -223,7 +235,7 @@ describe('call soap endpoints', () => {
                 }
             }
         `);
-        // console.log(`error of '${url}'`, errorRes);
+        // console.log(`error'`, errorRes);
         expect(errorRes).to.exist;
         expect(errorRes.data).to.not.exist;
         expect(errorRes.errors).to.exist;
@@ -236,7 +248,7 @@ describe('call soap endpoints', () => {
         const schema: GraphQLSchema = await callEndpoint(options);
 
         const res: any = await graphql(schema, query);
-        // console.log(`result of '${options.url}'`, res);
+        // console.log(`result`, res);
         expect(res).to.exist;
         expect(res.data).to.exist;
         expect(res.errors).to.not.exist;

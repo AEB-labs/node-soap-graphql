@@ -17,7 +17,7 @@ export class NodeSoapEndpoint implements SoapEndpoint {
     }
 
     description(): string {
-        return this.describe();
+        return this.soapClient.wsdl.toXML();
     }
 
     services(): NodeSoapService[] {
