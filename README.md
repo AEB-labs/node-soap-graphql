@@ -6,6 +6,8 @@ The created GraphQL schema contains all types declared in the WSDL and provides 
 
 This package is fully dependend on the [node-soap package](https://github.com/vpulim/node-soap). It will only work in a Node.js environment.
 
+Checkout [soap-graphql-demo](https://github.com/sevenclev/node-soap-graphql-demo) for a quick demo.
+
 ### Example (TypeScript)
 ```typescript
 import * as express from 'express';
@@ -34,7 +36,7 @@ See code comments for more details.
 ## Limitations and Issues
 
 ### Supported WSDLs
-There is no guarantee, that this package will work with every valid WSDL.
+There is no guarantee that this package will work with every valid WSDL.
 
 [node-soap-graphql.spec](spec/node-soap-graphql.spec.ts) lists SOAP endpoints that were tested with this package. It also shows how to configure custom behavior for SOAP endpoints.
 
