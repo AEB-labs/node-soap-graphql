@@ -64,7 +64,7 @@ export class NodeSoapWsdlResolver {
 
         // inputContent===null -> argNames===[]
         const argNames: string[] = nonNamespaceKeys(inputContent);
-        const inputNamespace = targetNamespace(inputContent);
+        const inputNamespace = inputContent && targetNamespace(inputContent);
 
         const args: SoapOperationArg[] = argNames.map((key: string) => {
             return this.createOperationArg(operation, inputNamespace, key, inputContent[key]);
