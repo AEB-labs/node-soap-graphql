@@ -1,6 +1,6 @@
 {
   "name": "soap-graphql",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create a GraphQL schema from a WSDL-defined SOAP endpoint.",
   "author": "sevenclev",
   "license": "ISC",
