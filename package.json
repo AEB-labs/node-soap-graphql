@@ -28,16 +28,16 @@
   },
   "peerDependencies": {
     "graphql": "~0.10.0 | ~0.11.0 | ~0.12.0",
-    "soap": "~0.23.0"
+    "soap": "~0.43.0"
   },
   "devDependencies": {
     "@types/graphql": "~0.12.3",
     "@types/node": "^8.0.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "mocha": "^4.0.1",
     "graphql": "~0.12.0",
-    "soap": "~0.23.0",
+    "mocha": "^4.0.1",
+    "soap": "^0.43.0",
     "ts-node": "~4.1.0",
     "typescript": "~2.6.2"
   }
