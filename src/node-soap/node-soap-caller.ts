@@ -1,9 +1,8 @@
-import { SoapOperation } from '../soap2graphql/soap-endpoint';
-import { SoapCaller, SoapCallInput } from '../soap2graphql/soap-caller';
-import { NodeSoapClient } from './node-soap';
-import { GraphQLResolveInfo } from 'graphql/type/definition';
 import { inspect } from 'util';
-import { Logger, LateResolvedMessage } from '../soap2graphql/logger';
+import { LateResolvedMessage, Logger } from '../soap2graphql/logger';
+import { SoapCaller, SoapCallInput } from '../soap2graphql/soap-caller';
+import { SoapOperation } from '../soap2graphql/soap-endpoint';
+import { NodeSoapClient } from './node-soap';
 
 /**
  * Default implementation of SoapCaller for node-soap.
@@ -53,10 +52,8 @@ export class NodeSoapCaller implements SoapCaller {
     }
 
     protected deepCopy(obj: any): any {
-        if (!obj) {
-            return null;
-        } else if (Object(obj) !== obj) {
-            // primitive
+        if (obj == undefined || Object(obj) !== obj) {
+            // null, undefined or primitive
             return obj;
         } else if (Array.isArray(obj)) {
             return obj.map(e => this.deepCopy(e));
