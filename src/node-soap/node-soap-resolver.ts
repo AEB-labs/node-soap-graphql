@@ -244,7 +244,7 @@ export class NodeSoapWsdlResolver {
             fields: null,
         };
 
-        // resolve bindings (field types, base type) after type has been registered to resolve circular dependencies
+        // resolve bindings (field types, base type)
         const bodyTypeDefinition: XsdTypeDefinition = xsdFieldDefinition.children ? xsdFieldDefinition.children[0] : undefined;
         if (bodyTypeDefinition) {
             this.resolveTypeBody(soapType, namespace, bodyTypeDefinition);
