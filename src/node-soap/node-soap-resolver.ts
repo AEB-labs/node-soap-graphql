@@ -236,7 +236,10 @@ export class NodeSoapWsdlResolver {
         const ownerStringForLog = `field '${xsdFieldDefinition.$name}' of soap type '${parentSoapType.name}'`;
         this.debug(() => `resolving anonymous type for ${ownerStringForLog} from namespace '${namespace}'`);
 
-        const generatedTypeName = `${parentSoapType.name}_${capitalizeFirstLetter(xsdFieldDefinition.$name)}`;
+        let generatedTypeName = `${parentSoapType.name}_${capitalizeFirstLetter(xsdFieldDefinition.$name)}`;
+        while (!!this.findXsdTypeDefinition(namespace, generatedTypeName)) {
+            generatedTypeName = generatedTypeName + "_";
+        }
 
         const soapType: SoapObjectType = {
             name: generatedTypeName,
