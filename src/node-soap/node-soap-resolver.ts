@@ -33,8 +33,9 @@ type XsdExtension = { name: 'extension'; $base: string; children: XsdSequence[] 
 type XsdFieldDefinition = {
     $name: string;
     $targetNamespace: string;
-    $type: string;
+    $type: string|undefined;
     $maxOccurs?: 'unbounded' | string;
+    children: XsdTypeDefinition[]|undefined;
 };
 
 export class NodeSoapWsdlResolver {
@@ -230,6 +231,33 @@ export class NodeSoapWsdlResolver {
         }
     }
 
+    private resolveAnonymousTypeToSoapType(xsdFieldDefinition: XsdFieldDefinition, parentSoapType: SoapObjectType): SoapType {
+        const namespace = xsdFieldDefinition.$targetNamespace;
+        const ownerStringForLog = `field '${xsdFieldDefinition.$name}' of soap type '${parentSoapType.name}'`;
+        this.debug(() => `resolving anonymous type for ${ownerStringForLog} from namespace '${namespace}'`);
+
+        let generatedTypeName = `${parentSoapType.name}_${capitalizeFirstLetter(xsdFieldDefinition.$name)}`;
+        while (!!this.findXsdTypeDefinition(namespace, generatedTypeName)) {
+            generatedTypeName = generatedTypeName + "_";
+        }
+
+        const soapType: SoapObjectType = {
+            name: generatedTypeName,
+            base: null,
+            fields: null,
+        };
+
+        // resolve bindings (field types, base type)
+        const bodyTypeDefinition: XsdTypeDefinition = xsdFieldDefinition.children ? xsdFieldDefinition.children[0] : undefined;
+        if (bodyTypeDefinition) {
+            this.resolveTypeBody(soapType, namespace, bodyTypeDefinition);
+            this.debug(() => `resolved namespace: '${namespace}', typeName: '${generatedTypeName}' to object type '${inspect(soapType, false, 3)}'`);
+        } else {
+            this.warn(() => `cannot determine type definition for soap type '${generatedTypeName}', leaving fields empty`);
+        }
+        return soapType;
+    }
+
     private findXsdTypeDefinition(namespace: string, typeName: string): XsdTypeDefinition {
         return this.wsdl.findSchemaObject(namespace, typeName)
     }
@@ -259,11 +287,17 @@ export class NodeSoapWsdlResolver {
         }
 
         const soapFields: SoapField[] = fields.map((field: XsdFieldDefinition) => {
+            let type;
+            if (field.$type) {
+                type = this.resolveWsdlNameToSoapType(field.$targetNamespace, withoutNamespace(field.$type), `field '${field.$name}' of soap type '${soapType.name}'`);
+            } else {
+                type = this.resolveAnonymousTypeToSoapType(field, soapType);
+            }
             return {
                 name: field.$name,
-                type: this.resolveWsdlNameToSoapType(field.$targetNamespace, withoutNamespace(field.$type), `field '${field.$name}' of soap type '${soapType.name}'`),
-                isList: !!field.$maxOccurs && field.$maxOccurs === 'unbounded',
-            }
+                type,
+                isList: !!field.$maxOccurs && field.$maxOccurs === 'unbounded'
+            };
         });
 
         // @todo in XSD it is possible to inherit a type from a primitive ... may have to handle this
@@ -311,4 +345,8 @@ function parseWsdlFieldName(wsdlFieldName: string): { name: string, isList: bool
             isList: false,
         }
     }
+}
+
+function capitalizeFirstLetter(value: string) {
+    return value.charAt(0).toUpperCase() + value.substring(1);
 }
