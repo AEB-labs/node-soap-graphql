@@ -3,7 +3,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import { expect } from 'chai';
 import { after, afterEach, before, beforeEach, describe, fail, it } from 'mocha';
 import { GraphQLInt, GraphQLString, GraphQLBoolean, GraphQLFloat, GraphQLID } from 'graphql/type/scalars';
-import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-iso-date';
+import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-scalars';
 import { DefaultTypeResolver } from '../../../src/soap2graphql/custom-type-resolver';
 
 chai.use(chaiAsPromised);
@@ -41,11 +41,11 @@ describe('DefaultTypeResolver', () => {
         expect(resolver.resolve('IDREFS')).to.equal(GraphQLString);
         expect(resolver.resolve('ENTITY')).to.equal(GraphQLString);
         expect(resolver.resolve('ENTITIES')).to.equal(GraphQLString);
-        
+
         expect(resolver.resolve('ID')).to.equal(GraphQLID);
-        
+
         expect(resolver.resolve('boolean')).to.equal(GraphQLBoolean);
-        
+
         expect(resolver.resolve('byte')).to.equal(GraphQLInt);
         expect(resolver.resolve('unsignedByte')).to.equal(GraphQLInt);
         expect(resolver.resolve('short')).to.equal(GraphQLInt);
@@ -59,11 +59,11 @@ describe('DefaultTypeResolver', () => {
         expect(resolver.resolve('nonNegativeInteger')).to.equal(GraphQLInt);
         expect(resolver.resolve('long')).to.equal(GraphQLInt);
         expect(resolver.resolve('unsignedLong')).to.equal(GraphQLInt);
-        
+
         expect(resolver.resolve('decimal')).to.equal(GraphQLFloat);
         expect(resolver.resolve('float')).to.equal(GraphQLFloat);
         expect(resolver.resolve('double')).to.equal(GraphQLFloat);
-        
+
         expect(resolver.resolve('dateTime')).to.equal(GraphQLDateTime);
         expect(resolver.resolve('date')).to.equal(GraphQLDate);
         expect(resolver.resolve('time')).to.equal(GraphQLTime);
