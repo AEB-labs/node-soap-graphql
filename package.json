@@ -24,21 +24,20 @@
     "postpublish": ""
   },
   "dependencies": {
-    "graphql-iso-date": "~3.3.0"
+    "graphql-scalars": "^1.18.0"
   },
   "peerDependencies": {
-    "graphql": "~0.10.0 | ~0.11.0 | ~0.12.0",
+    "graphql": "^15.0.0 || ^16.0.0",
     "soap": "~0.43.0"
   },
   "devDependencies": {
-    "@types/graphql": "~0.12.3",
-    "@types/node": "^8.0.0",
+    "@types/node": "^14.14.31",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "graphql": "~0.12.0",
+    "graphql": "^16.6.0",
     "mocha": "^4.0.1",
     "soap": "^0.43.0",
-    "ts-node": "~4.1.0",
-    "typescript": "~2.6.2"
+    "ts-node": "^10.9.1",
+    "typescript": "~4.8.3"
   }
 }

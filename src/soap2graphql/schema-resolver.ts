@@ -6,7 +6,7 @@ import { GraphQLString } from 'graphql/type/scalars';
 import { SoapEndpoint, SoapService, SoapPort, SoapOperation, SoapField, SoapType, SoapObjectType, SoapOperationArg } from './soap-endpoint';
 import { SoapCaller } from './soap-caller';
 import { inspect } from 'util';
-import { GraphQLObjectType, Thunk, GraphQLFieldConfigMap, GraphQLFieldConfig, GraphQLFieldConfigArgumentMap, GraphQLOutputType, GraphQLFieldResolver, GraphQLNonNull, GraphQLResolveInfo, GraphQLInterfaceType, GraphQLList, GraphQLScalarType, GraphQLObjectTypeConfig, GraphQLInterfaceTypeConfig, GraphQLInputType, GraphQLInputObjectType, GraphQLInputObjectTypeConfig, GraphQLInputFieldConfigMap } from 'graphql';
+import { GraphQLObjectType, GraphQLFieldConfigMap, GraphQLFieldConfig, GraphQLFieldConfigArgumentMap, GraphQLOutputType, GraphQLFieldResolver, GraphQLNonNull, GraphQLResolveInfo, GraphQLInterfaceType, GraphQLList, GraphQLScalarType, GraphQLObjectTypeConfig, GraphQLInterfaceTypeConfig, GraphQLInputType, GraphQLInputObjectType, GraphQLInputObjectTypeConfig, GraphQLInputFieldConfigMap } from 'graphql';
 import { Logger } from './logger';
 
 export class SchemaResolver {
@@ -67,7 +67,7 @@ export class SchemaResolver {
 
     createMutationObject(): GraphQLObjectType {
 
-        const fieldsThunk: Thunk<GraphQLFieldConfigMap<any, any>> = () => {
+        const fieldsThunk = (): GraphQLFieldConfigMap<any, any> => {
             const fields: GraphQLFieldConfigMap<any, any> = {};
 
             this.soapEndpoint.services().forEach((service: SoapService) => {
@@ -97,7 +97,7 @@ export class SchemaResolver {
 
     createSoapServiceField(service: SoapService): GraphQLFieldConfig<any, any> {
 
-        const fieldsThunk: Thunk<GraphQLFieldConfigMap<any, any>> = () => {
+        const fieldsThunk = (): GraphQLFieldConfigMap<any, any> => {
             const fields: GraphQLFieldConfigMap<any, any> = {};
 
             service.ports().forEach((port: SoapPort) => {
@@ -128,7 +128,7 @@ export class SchemaResolver {
 
     createSoapPortField(service: SoapService, port: SoapPort): GraphQLFieldConfig<any, any> {
 
-        const fieldsThunk: Thunk<GraphQLFieldConfigMap<any, any>> = () => {
+        const fieldsThunk = (): GraphQLFieldConfigMap<any, any> => {
             const fields: GraphQLFieldConfigMap<any, any> = {};
 
             port.operations().forEach((operation: SoapOperation) => {
@@ -241,13 +241,13 @@ class GraphqlOutputFieldResolver {
 
     private createObjectTypeConfig(soapType: SoapObjectType): GraphQLObjectTypeConfig<any, any> {
 
-        const fields: Thunk<GraphQLFieldConfigMap<any, any>> = () => {
+        const fields = (): GraphQLFieldConfigMap<any, any> => {
             const fieldMap: GraphQLFieldConfigMap<any, any> = {};
             this.appendObjectTypeFields(fieldMap, soapType);
             return fieldMap;
         };
 
-        const interfaces: Thunk<GraphQLInterfaceType[]> = () => {
+        const interfaces = (): GraphQLInterfaceType[] => {
             const interfaces: GraphQLInterfaceType[] = [];
             this.appendInterfaces(interfaces, soapType);
             return interfaces;
@@ -295,7 +295,7 @@ class GraphqlOutputFieldResolver {
 
     private createInterfaceTypeConfig(soapType: SoapObjectType): GraphQLInterfaceTypeConfig<any, any> {
 
-        const fields: Thunk<GraphQLFieldConfigMap<any, any>> = () => {
+        const fields = (): GraphQLFieldConfigMap<any, any> => {
             const fieldMap: GraphQLFieldConfigMap<any, any> = {};
             this.appendInterfaceTypeFields(fieldMap, soapType);
             return fieldMap;
@@ -371,7 +371,7 @@ class GraphqlInputFieldResolver {
 
     private createObjectTypeConfig(soapType: SoapObjectType): GraphQLInputObjectTypeConfig {
 
-        const fields: Thunk<GraphQLInputFieldConfigMap> = () => {
+        const fields = (): GraphQLInputFieldConfigMap => {
             const fieldMap: GraphQLInputFieldConfigMap = {};
             this.appendObjectTypeFields(fieldMap, soapType);
             return fieldMap;

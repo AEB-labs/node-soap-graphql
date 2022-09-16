@@ -3,7 +3,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import { expect } from 'chai';
 import { after, afterEach, before, beforeEach, describe, fail, it, xit } from 'mocha';
 import { GraphQLSchema } from 'graphql/type/schema';
-import { introspectionQuery } from 'graphql/utilities/introspectionQuery';
+import { getIntrospectionQuery } from 'graphql';
 import { graphql, printSchema, GraphQLInputType, GraphQLEnumType, GraphQLEnumValueConfigMap } from 'graphql';
 import { inspect } from 'util';
 import { GraphQLBoolean } from 'graphql/type/scalars';
@@ -215,26 +215,32 @@ describe('call soap endpoints', () => {
         // console.log(`schema`, printSchema(schema));
 
         // check that intorspection can be executed
-        const introspection = await graphql(schema, introspectionQuery);
+        const introspection = await graphql({ schema, source: getIntrospectionQuery() });
         // console.log(`introspection`, introspection);
         expect(introspection).to.exist;
 
         // check the description field
-        const description = await graphql(schema, `
-            {
-                description
-            }
-        `);
+        const description = await graphql({
+            schema,
+            source: `
+                {
+                    description
+                }
+            `
+        });
         // console.log(`description`, description);
         expect(description).to.exist;
 
-        const errorRes = await graphql(schema, `
-            mutation {
-                foo {
-                    bar
+        const errorRes = await graphql({
+            schema,
+            source: `
+                mutation {
+                    foo {
+                        bar
+                    }
                 }
-            }
-        `);
+            `
+        });
         // console.log(`error'`, errorRes);
         expect(errorRes).to.exist;
         expect(errorRes.data).to.not.exist;
@@ -247,7 +253,7 @@ describe('call soap endpoints', () => {
 
         const schema: GraphQLSchema = await callEndpoint(options);
 
-        const res: any = await graphql(schema, query);
+        const res: any = await graphql({ schema, source: query });
         // console.log(`result`, res);
         expect(res).to.exist;
         expect(res.data).to.exist;

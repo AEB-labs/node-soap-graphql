@@ -12,18 +12,18 @@ describe('name-resolver', () => {
 
         expect(defaultOutputNameResolver(null)).to.not.exist;
         expect(defaultOutputNameResolver(undefined)).to.not.exist;
-        expect(defaultOutputNameResolver({ name: null })).to.not.exist;
-        expect(defaultOutputNameResolver({ name: undefined })).to.not.exist;
-        expect(defaultOutputNameResolver({ name: '' })).to.not.exist;
+        expect(defaultOutputNameResolver({ name: null } as any)).to.not.exist;
+        expect(defaultOutputNameResolver({ name: undefined } as any)).to.not.exist;
+        expect(defaultOutputNameResolver({ name: '' } as any)).to.not.exist;
 
-        expect(defaultOutputNameResolver({ name: 'a' })).to.equal('A');
-        expect(defaultOutputNameResolver({ name: 'A' })).to.equal('A');
+        expect(defaultOutputNameResolver({ name: 'a' } as any)).to.equal('A');
+        expect(defaultOutputNameResolver({ name: 'A' } as any)).to.equal('A');
 
-        expect(defaultOutputNameResolver({ name: 'ab' })).to.equal('Ab');
-        expect(defaultOutputNameResolver({ name: 'Ab' })).to.equal('Ab');
+        expect(defaultOutputNameResolver({ name: 'ab' } as any)).to.equal('Ab');
+        expect(defaultOutputNameResolver({ name: 'Ab' } as any)).to.equal('Ab');
 
-        expect(defaultOutputNameResolver({ name: 'abc' })).to.equal('Abc');
-        expect(defaultOutputNameResolver({ name: 'Abc' })).to.equal('Abc');
+        expect(defaultOutputNameResolver({ name: 'abc' } as any)).to.equal('Abc');
+        expect(defaultOutputNameResolver({ name: 'Abc' } as any)).to.equal('Abc');
 
     }).timeout(10000);
 
@@ -31,18 +31,18 @@ describe('name-resolver', () => {
 
         expect(defaultInterfaceNameResolver(null)).to.not.exist;
         expect(defaultInterfaceNameResolver(undefined)).to.not.exist;
-        expect(defaultInterfaceNameResolver({ name: null })).to.not.exist;
-        expect(defaultInterfaceNameResolver({ name: undefined })).to.not.exist;
-        expect(defaultOutputNameResolver({ name: '' })).to.not.exist;
+        expect(defaultInterfaceNameResolver({ name: null } as any)).to.not.exist;
+        expect(defaultInterfaceNameResolver({ name: undefined } as any)).to.not.exist;
+        expect(defaultOutputNameResolver({ name: '' } as any)).to.not.exist;
 
-        expect(defaultInterfaceNameResolver({ name: 'a' })).to.equal('iA');
-        expect(defaultInterfaceNameResolver({ name: 'A' })).to.equal('iA');
+        expect(defaultInterfaceNameResolver({ name: 'a' } as any)).to.equal('iA');
+        expect(defaultInterfaceNameResolver({ name: 'A' } as any)).to.equal('iA');
 
-        expect(defaultInterfaceNameResolver({ name: 'ab' })).to.equal('iAb');
-        expect(defaultInterfaceNameResolver({ name: 'Ab' })).to.equal('iAb');
+        expect(defaultInterfaceNameResolver({ name: 'ab' } as any)).to.equal('iAb');
+        expect(defaultInterfaceNameResolver({ name: 'Ab' } as any)).to.equal('iAb');
 
-        expect(defaultInterfaceNameResolver({ name: 'abc' })).to.equal('iAbc');
-        expect(defaultInterfaceNameResolver({ name: 'Abc' })).to.equal('iAbc');
+        expect(defaultInterfaceNameResolver({ name: 'abc' } as any)).to.equal('iAbc');
+        expect(defaultInterfaceNameResolver({ name: 'Abc' } as any)).to.equal('iAbc');
 
     }).timeout(10000);
 
@@ -50,18 +50,18 @@ describe('name-resolver', () => {
 
         expect(defaultInputNameResolver(null)).to.not.exist;
         expect(defaultInputNameResolver(undefined)).to.not.exist;
-        expect(defaultInputNameResolver({ name: null })).to.not.exist;
-        expect(defaultInputNameResolver({ name: undefined })).to.not.exist;
-        expect(defaultInputNameResolver({ name: '' })).to.not.exist;
+        expect(defaultInputNameResolver({ name: null } as any)).to.not.exist;
+        expect(defaultInputNameResolver({ name: undefined } as any)).to.not.exist;
+        expect(defaultInputNameResolver({ name: '' } as any)).to.not.exist;
 
-        expect(defaultInputNameResolver({ name: 'a' })).to.equal('AInput');
-        expect(defaultInputNameResolver({ name: 'A' })).to.equal('AInput');
+        expect(defaultInputNameResolver({ name: 'a' } as any)).to.equal('AInput');
+        expect(defaultInputNameResolver({ name: 'A' } as any)).to.equal('AInput');
 
-        expect(defaultInputNameResolver({ name: 'ab' })).to.equal('AbInput');
-        expect(defaultInputNameResolver({ name: 'Ab' })).to.equal('AbInput');
+        expect(defaultInputNameResolver({ name: 'ab' } as any)).to.equal('AbInput');
+        expect(defaultInputNameResolver({ name: 'Ab' } as any)).to.equal('AbInput');
 
-        expect(defaultInputNameResolver({ name: 'abc' })).to.equal('AbcInput');
-        expect(defaultInputNameResolver({ name: 'Abc' })).to.equal('AbcInput');
+        expect(defaultInputNameResolver({ name: 'abc' } as any)).to.equal('AbcInput');
+        expect(defaultInputNameResolver({ name: 'Abc' } as any)).to.equal('AbcInput');
 
     }).timeout(10000);
 
