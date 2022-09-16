@@ -13,7 +13,7 @@ chai.use(chaiAsPromised);
 
 describe('call soap endpoints', () => {
 
-    it('http://www.webservicex.net/geoipservice.asmx?WSDL', async () => {
+    xit('http://www.webservicex.net/geoipservice.asmx?WSDL', async () => {
         await queryEndpoint({ createClient: { url: 'http://www.webservicex.net/geoipservice.asmx?WSDL' } }, `
         mutation {
             GetGeoIP(IPAddress: "74.125.224.72") {
@@ -46,7 +46,7 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    it('http://www.webservicex.net/globalweather.asmx?WSDL', async () => {
+    xit('http://www.webservicex.net/globalweather.asmx?WSDL', async () => {
         await queryEndpoint({ createClient: { url: 'http://www.webservicex.net/globalweather.asmx?WSDL' } }, `
             mutation {
                 GetCitiesByCountry(CountryName: "Germany")
@@ -57,7 +57,7 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    it('http://www.webservicex.net/periodictable.asmx?WSDL', async () => {
+    xit('http://www.webservicex.net/periodictable.asmx?WSDL', async () => {
         await queryEndpoint({ createClient: { url: 'http://www.webservicex.net/periodictable.asmx?WSDL' } }, `
             mutation {
                 atoms: GetAtoms
@@ -110,7 +110,7 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    it('http://www.webservicex.net/Astronomical.asmx?WSDL', async () => {
+    xit('http://www.webservicex.net/Astronomical.asmx?WSDL', async () => {
 
         class AstronomicalResolver extends DefaultTypeResolver {
 
@@ -146,7 +146,7 @@ describe('call soap endpoints', () => {
             });
     }).timeout(5000);
 
-    it('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
+    xit('http://www.webservicex.net/CurrencyConvertor.asmx?WSDL', async () => {
 
         class CurrencyResolver extends DefaultTypeResolver {
 
@@ -177,7 +177,7 @@ describe('call soap endpoints', () => {
         `);
     }).timeout(5000);
 
-    it('http://soatest.parasoft.com/calculator.wsdl', async () => {
+    xit('http://soatest.parasoft.com/calculator.wsdl', async () => {
 
         class CalculatorCaller extends NodeSoapCaller {
             async createGraphqlResult(input: SoapCallInput, result: any): Promise<any> {
