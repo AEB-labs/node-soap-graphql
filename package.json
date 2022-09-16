@@ -16,8 +16,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "mocha --opts ./spec/mocha.opts",
-    "test-private": "mocha --opts ./spec/private/mocha.opts",
+    "test": "mocha --require ts-node/register ./spec/**/*.spec.ts",
     "tsc": "tsc --project ./tsconfig.build.json",
     "build": "npm run-script tsc",
     "prepublishOnly": "",
