@@ -1,13 +1,6 @@
-# editors
-.vscode/
-.idea/
-
-# development sources
-node_modules/
+.*
 src/
-index.ts
 spec/
+index.ts
+SECURITY.md
 tsconfig*
-**/*.log
-
-.npmignore
