@@ -1,4 +1,13 @@
-import { SoapEndpoint, SoapType, SoapObjectType, SoapField, SoapService, SoapPort, SoapOperation, SoapOperationArg } from '../soap2graphql/soap-endpoint';
+import {
+    SoapEndpoint,
+    SoapType,
+    SoapObjectType,
+    SoapField,
+    SoapService,
+    SoapPort,
+    SoapOperation,
+    SoapOperationArg,
+} from '../soap2graphql/soap-endpoint';
 import { NodeSoapClient, NodeSoapOptions } from './node-soap';
 import { inspect } from 'util';
 import { NodeSoapWsdlResolver } from './node-soap-resolver';
@@ -9,7 +18,6 @@ export function createSoapEndpoint(soapClient: NodeSoapClient, logger: Logger): 
 }
 
 export class NodeSoapEndpoint implements SoapEndpoint {
-
     private _resolver: NodeSoapWsdlResolver;
 
     constructor(private soapClient: NodeSoapClient, logger: Logger) {
@@ -40,13 +48,10 @@ export class NodeSoapEndpoint implements SoapEndpoint {
         }
         return this._describe;
     }
-
 }
 
 export class NodeSoapService implements SoapService {
-
-    constructor(private _wsdl: NodeSoapEndpoint, private _name: string, private _content: any) {
-    }
+    constructor(private _wsdl: NodeSoapEndpoint, private _name: string, private _content: any) {}
 
     endpoint(): NodeSoapEndpoint {
         return this._wsdl;
@@ -71,13 +76,10 @@ export class NodeSoapService implements SoapService {
         }
         return ports;
     }
-
 }
 
 export class NodeSoapPort implements SoapPort {
-
-    constructor(private _service: NodeSoapService, private _name: string, private _content: any) {
-    }
+    constructor(private _service: NodeSoapService, private _name: string, private _content: any) {}
 
     endpoint(): NodeSoapEndpoint {
         return this.service().endpoint();
@@ -106,13 +108,10 @@ export class NodeSoapPort implements SoapPort {
         }
         return operations;
     }
-
 }
 
 export class NodeSoapOperation implements SoapOperation {
-
-    constructor(private _port: NodeSoapPort, private _name: string, private _content: any) {
-    }
+    constructor(private _port: NodeSoapPort, private _name: string, private _content: any) {}
 
     endpoint(): NodeSoapEndpoint {
         return this.port().endpoint();
@@ -142,8 +141,8 @@ export class NodeSoapOperation implements SoapOperation {
         return this._inputs;
     }
 
-    private _output: { type: { type: SoapType, isList: boolean }; resultField: string } = null;
-    output(): { type: SoapType, isList: boolean } {
+    private _output: { type: { type: SoapType; isList: boolean }; resultField: string } = null;
+    output(): { type: SoapType; isList: boolean } {
         if (!this._output) {
             this._output = this.createOutput();
         }
@@ -156,8 +155,7 @@ export class NodeSoapOperation implements SoapOperation {
         return this._output.resultField;
     }
 
-    private createOutput(): { type: { type: SoapType, isList: boolean }; resultField: string } {
+    private createOutput(): { type: { type: SoapType; isList: boolean }; resultField: string } {
         return this.endpoint().resolver().createOperationOutput(this);
     }
-
 }

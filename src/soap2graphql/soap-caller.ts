@@ -7,7 +7,7 @@ export type SoapCallInput = {
     graphqlArgs: { [argName: string]: any };
     graphqlContext: any;
     graphqlInfo: GraphQLResolveInfo;
-}
+};
 
 export interface SoapCaller {
     /**

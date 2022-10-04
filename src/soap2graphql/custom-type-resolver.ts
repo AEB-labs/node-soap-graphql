@@ -1,4 +1,13 @@
-import { GraphQLScalarType, GraphQLID, GraphQLString, GraphQLFloat, GraphQLBoolean, GraphQLInt, GraphQLOutputType, GraphQLInputType } from 'graphql';
+import {
+    GraphQLScalarType,
+    GraphQLID,
+    GraphQLString,
+    GraphQLFloat,
+    GraphQLBoolean,
+    GraphQLInt,
+    GraphQLOutputType,
+    GraphQLInputType,
+} from 'graphql';
 import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-scalars';
 
 /**
@@ -18,7 +27,6 @@ export interface CustomTypeResolver {
  * Based on https://www.w3.org/TR/xmlschema-2/#built-in-datatypes
  */
 export class DefaultTypeResolver implements CustomTypeResolver {
-
     string = GraphQLString;
     base64Binary = GraphQLString;
     hexBinary = GraphQLString;
@@ -79,5 +87,4 @@ export class DefaultTypeResolver implements CustomTypeResolver {
     inputType(typeName: string): GraphQLInputType {
         return this.resolve(typeName);
     }
-
 }

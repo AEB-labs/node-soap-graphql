@@ -1,9 +1,7 @@
-
 /**
  * SOAP endpoint defined by a WSDL.
  */
 export interface SoapEndpoint {
-
     services(): SoapService[];
 
     /**
