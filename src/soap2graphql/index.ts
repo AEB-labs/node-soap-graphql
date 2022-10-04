@@ -9,10 +9,8 @@ export {
     CustomTypeResolver,
     DefaultTypeResolver,
     NameResolver,
-
     SoapCaller,
     SoapCallInput,
-
     Logger,
     LateResolvedMessage,
     createLogger,

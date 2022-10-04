@@ -22,7 +22,10 @@ export type NodeSoapOptions = {
     };
 };
 
-export async function createSoapClient(url: string, options: NodeSoapOptions = {}): Promise<NodeSoapClient> {
+export async function createSoapClient(
+    url: string,
+    options: NodeSoapOptions = {},
+): Promise<NodeSoapClient> {
     const opts: IOptions = !options.options ? {} : options.options;
     return new Promise<any>((resolve, reject) => {
         try {
@@ -31,7 +34,12 @@ export async function createSoapClient(url: string, options: NodeSoapOptions = {
                     reject(err);
                 } else {
                     if (!!options.basicAuth) {
-                        client.setSecurity(new BasicAuthSecurity(options.basicAuth.username, options.basicAuth.password));
+                        client.setSecurity(
+                            new BasicAuthSecurity(
+                                options.basicAuth.username,
+                                options.basicAuth.password,
+                            ),
+                        );
                     }
                     resolve(client);
                 }

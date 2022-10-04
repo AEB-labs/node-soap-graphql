@@ -29,7 +29,7 @@ export type SoapGraphqlOptions = {
     /**
      * Handler for executing a soap call based on input from GraphQL.
      * Use this, if request do need pre-processing (resp.: responses need post-processing) before execution.
-     * 
+     *
      * default: NodeSoapCaller
      */
     soapCaller?: SoapCaller;
@@ -37,22 +37,22 @@ export type SoapGraphqlOptions = {
     /**
      * If set to true, (a lot of) debug-information will be dumped to console.log
      * Do not use this in production!
-     * 
+     *
      * default: false
      */
     debug?: boolean;
     /**
      * If set to true, warnings will be printed to console.log
      * A warning means: The GraphQL schema can be generated, but it might not work as intended.
-     * 
+     *
      * default: false
      */
     warnings?: boolean;
-}
+};
 
 /**
  * Creates a GraphQL schema for the WSDL defined by the given parameters.
- * 
+ *
  * The created GraphQL schema will include:
  * - A Mutation-field for every operation in the WSDL.
  * If the field is queried via GraphQL, the SOAP endpoint declared in the WSDL will be called and the result of the call will be returned via GraphQL.
@@ -60,18 +60,22 @@ export type SoapGraphqlOptions = {
  * - A GraphQL interface type for every WSDL type that is: a) used as a base type of another type and b) declared in the schema section of the WSDL.
  * - A GraphQL input type for every WSDL type that is: a) used as a input type of an operation and b) declared in the schema section of the WSDL.
  * - A Query-field that returns the content of the WSDL (this is necessary, since a GraphQL schema must include at least one Query-field)
- * 
+ *
  * @param options either an instance of SoapGraphQLOptions or the URL (http/https or path to a file) to a WSDL.
  */
-export async function soapGraphqlSchema(options: SoapGraphqlOptions | string): Promise<GraphQLSchema> {
+export async function soapGraphqlSchema(
+    options: SoapGraphqlOptions | string,
+): Promise<GraphQLSchema> {
     return new GraphQLSchema(await soapGraphqlSchemaConfig(options));
 }
 
-export async function soapGraphqlSchemaConfig(options: SoapGraphqlOptions | string): Promise<GraphQLSchemaConfig> {
+export async function soapGraphqlSchemaConfig(
+    options: SoapGraphqlOptions | string,
+): Promise<GraphQLSchemaConfig> {
     if (typeof options === 'string') {
         options = {
             createClient: {
-                url: options
+                url: options,
             },
             warnings: false,
             debug: false,
