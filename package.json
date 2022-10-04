@@ -22,7 +22,8 @@
     "test": "mocha --require ts-node/register ./spec/**/*.spec.ts",
     "tsc": "tsc --project ./tsconfig.build.json",
     "build": "npm run-script tsc",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "graphql-scalars": "^1.18.0"
