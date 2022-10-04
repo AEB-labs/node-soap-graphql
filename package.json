@@ -13,6 +13,9 @@
     "type": "git",
     "url": "https://github.com/sevenclev/node-soap-graphql.git"
   },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
