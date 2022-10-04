@@ -1,6 +1,7 @@
 # editors
 .vscode/
-.idea/
+.idea/*
+!.idea/
 
 # development sources
 node_modules/
