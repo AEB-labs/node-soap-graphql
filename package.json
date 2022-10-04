@@ -22,8 +22,6 @@
     "test": "mocha --require ts-node/register ./spec/**/*.spec.ts",
     "tsc": "tsc --project ./tsconfig.build.json",
     "build": "npm run-script tsc",
-    "prepublishOnly": "",
-    "postpublish": "",
     "prepare": "husky install"
   },
   "dependencies": {
