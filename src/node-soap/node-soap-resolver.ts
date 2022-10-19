@@ -402,24 +402,34 @@ export class NodeSoapWsdlResolver {
             fields = [];
         }
 
-        const soapFields: SoapField[] = fields.map((field: XsdFieldDefinition) => {
-            let type;
-            if (field.$type) {
-                type = this.resolveWsdlNameToSoapType(
-                    field.$targetNamespace,
-                    withoutNamespace(field.$type),
-                    `field '${field.$name}' of soap type '${soapType.name}'`,
-                );
-            } else {
-                type = this.resolveAnonymousTypeToSoapType(field, soapType);
-            }
-            return {
-                name: field.$name,
-                type,
-                isList: !!field.$maxOccurs && field.$maxOccurs === 'unbounded',
-            };
-        });
-
+        let soapFields: SoapField[];
+        if (fields.length === 0) {
+            // In XSD, complex types can be empty. Object types in GraphQL must have at least one field.
+            // That's why we have to add a dummy field if the complex type doesnt' bring its own fields.
+            soapFields = [{
+                name: 'dummy',
+                type: 'String',
+                isList: false
+            }]
+        } else {
+            soapFields = fields.map((field: XsdFieldDefinition) => {
+                let type;
+                if (field.$type) {
+                    type = this.resolveWsdlNameToSoapType(
+                        field.$targetNamespace,
+                        withoutNamespace(field.$type),
+                        `field '${field.$name}' of soap type '${soapType.name}'`,
+                    );
+                } else {
+                    type = this.resolveAnonymousTypeToSoapType(field, soapType);
+                }
+                return {
+                    name: field.$name,
+                    type,
+                    isList: !!field.$maxOccurs && field.$maxOccurs === 'unbounded',
+                };
+            });
+        }
         // @todo in XSD it is possible to inherit a type from a primitive ... may have to handle this
         const baseType: SoapObjectType = !baseTypeName
             ? null
