@@ -288,6 +288,12 @@ class GraphqlOutputFieldResolver {
         const fields = (): GraphQLFieldConfigMap<any, any> => {
             const fieldMap: GraphQLFieldConfigMap<any, any> = {};
             this.appendObjectTypeFields(fieldMap, soapType);
+            if (Object.keys(fieldMap).length == 0) {
+                fieldMap['dummy'] = {
+                    type: GraphQLString,
+                    description: 'Artificial field, do not use.',
+                };
+            }
             return fieldMap;
         };
 
@@ -308,14 +314,7 @@ class GraphqlOutputFieldResolver {
         fieldMap: GraphQLFieldConfigMap<any, any>,
         soapType: SoapObjectType,
     ): void {
-        soapType.fields.forEach((soapField: SoapField) => {
-            fieldMap[soapField.name] = {
-                type: this.resolve(soapField),
-            };
-        });
-        if (!!soapType.base) {
-            this.appendObjectTypeFields(fieldMap, soapType.base);
-        }
+        this.appendTypeFields(fieldMap, soapType);
     }
 
     private appendInterfaces(interfaces: GraphQLInterfaceType[], soapType: SoapObjectType): void {
@@ -345,6 +344,12 @@ class GraphqlOutputFieldResolver {
         const fields = (): GraphQLFieldConfigMap<any, any> => {
             const fieldMap: GraphQLFieldConfigMap<any, any> = {};
             this.appendInterfaceTypeFields(fieldMap, soapType);
+            if (Object.keys(fieldMap).length == 0) {
+                fieldMap['dummy'] = {
+                    type: GraphQLString,
+                    description: 'Artificial field, do not use.',
+                };
+            }
             return fieldMap;
         };
 
@@ -362,13 +367,20 @@ class GraphqlOutputFieldResolver {
         fieldMap: GraphQLFieldConfigMap<any, any>,
         soapType: SoapObjectType,
     ): void {
+        this.appendTypeFields(fieldMap, soapType);
+    }
+
+    private appendTypeFields(
+        fieldMap: GraphQLFieldConfigMap<any, any>,
+        soapType: SoapObjectType,
+    ): void {
         soapType.fields.forEach((soapField: SoapField) => {
             fieldMap[soapField.name] = {
                 type: this.resolve(soapField),
             };
         });
         if (!!soapType.base) {
-            this.appendObjectTypeFields(fieldMap, soapType.base);
+            this.appendTypeFields(fieldMap, soapType.base);
         }
     }
 }
@@ -423,6 +435,12 @@ class GraphqlInputFieldResolver {
         const fields = (): GraphQLInputFieldConfigMap => {
             const fieldMap: GraphQLInputFieldConfigMap = {};
             this.appendObjectTypeFields(fieldMap, soapType);
+            if (Object.keys(fieldMap).length == 0) {
+                fieldMap['dummy'] = {
+                    type: GraphQLString,
+                    description: 'Artificial field, do not use.',
+                };
+            }
             return fieldMap;
         };
 
