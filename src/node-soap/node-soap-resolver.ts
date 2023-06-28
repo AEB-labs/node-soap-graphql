@@ -1,45 +1,32 @@
 import {
-    SoapType,
-    SoapOperationArg,
-    SoapObjectType,
+    SoapComplexType,
     SoapField,
+    SoapSimpleType,
+    SoapType,
 } from '../soap2graphql/soap-endpoint';
 import { inspect } from 'util';
-import { NodeSoapOperation, NodeSoapEndpoint } from './node-soap-endpoint';
-import { NodeSoapClient, NodeSoapWsdl } from './node-soap';
-import { Logger, LateResolvedMessage } from '../soap2graphql/logger';
+import { NodeSoapOperation } from './node-soap-endpoint';
+import { NodeSoapWsdl } from './node-soap';
+import { LateResolvedMessage, Logger } from '../soap2graphql/logger';
+import {
+    ComplexContentElement,
+    ComplexTypeElement,
+    Element,
+    ElementElement,
+    ExtensionElement,
+    InputElement,
+    RestrictionElement,
+    SequenceElement,
+    SimpleTypeElement,
+} from 'soap/lib/wsdl/elements';
+import { isListType } from 'graphql/type';
 
-// an content object ... basically a plain JS object
-type WsdlContent = { [key: string]: any };
-// a type definition in the WSDL;
-// Content: a complete definition of the type (fields etc.)
-// string: a primitive type (e.g. "xs:string")
-// null: ...probably a faulty WSDL
-type WsdlTypeContent = WsdlContent | string | null;
+type XsdSupportedTypeDefinition = ComplexTypeElement | SimpleTypeElement | ElementElement;
 
-// input content of an operation, defines the args of the operation
-type WsdlInputContent = { [argName: string]: WsdlArgContent } | {} | null;
-type WsdlArgContent = WsdlTypeContent;
-
-// output content of an operation, defines the result type
-type WsdlOutputContent = { resultFieldName: WsdlResultContent } | {} | null;
-type WsdlResultContent = WsdlTypeContent;
-
-type XsdTypeDefinition = { name: 'complexType'; $name: string; children: XsdTypeDefinitionBody[] };
-
-type XsdTypeDefinitionBody = XsdSequence | XsdComplexType;
-
-type XsdSequence = { name: 'sequence'; children: XsdFieldDefinition[] };
-
-type XsdComplexType = { name: 'complexContent'; children: XsdExtension[] };
-type XsdExtension = { name: 'extension'; $base: string; children: XsdSequence[] };
-
-type XsdFieldDefinition = {
-    $name: string;
-    $targetNamespace: string;
-    $type: string | undefined;
-    $maxOccurs?: 'unbounded' | string;
-    children: XsdTypeDefinition[] | undefined;
+const XS_STRING: SoapType = {
+    kind: 'simpleType',
+    name: 'string',
+    namespace: 'http://www.w3.org/2001/XMLSchema',
 };
 
 export class NodeSoapWsdlResolver {
@@ -55,8 +42,8 @@ export class NodeSoapWsdlResolver {
         this.logger.debug(message);
     }
 
-    createOperationArgs(operation: NodeSoapOperation): SoapOperationArg[] {
-        const inputContent: WsdlInputContent = operation.content()['input'];
+    createOperationArgs(operation: NodeSoapOperation): SoapType {
+        const inputContent: InputElement = operation.operationElement()['input'];
 
         this.debug(
             () =>
@@ -71,56 +58,22 @@ export class NodeSoapWsdlResolver {
             this.warn(() => `no input definition for operation '${operation.name()}'`);
         }
 
-        // inputContent===null -> argNames===[]
-        const argNames: string[] = nonNamespaceKeys(inputContent);
-        const inputNamespace = inputContent && targetNamespace(inputContent);
+        if (!inputContent.$lookupType) {
+            // no args
+            return undefined;
+        }
 
-        const args: SoapOperationArg[] = argNames
-            .map((key: string) => {
-                return this.createOperationArg(operation, inputNamespace, key, inputContent[key]);
-            })
-            .filter((arg) => !!arg);
-
-        return args;
+        const ns = resolveNamespace(inputContent);
+        const inputType = this.resolveWsdlNameToSoapType(
+            ns,
+            withoutNamespace(inputContent.$lookupType),
+            `args of operation '${operation.name()}'`,
+        );
+        return inputType;
     }
 
-    private createOperationArg(
-        operation: NodeSoapOperation,
-        inputNamespace: string,
-        argWsdlFieldName: string,
-        argContent: WsdlArgContent,
-    ): SoapOperationArg {
-        this.debug(
-            () =>
-                `creating arg for operation '${operation.name()}' from content '${inspect(
-                    argContent,
-                    false,
-                    5,
-                )}'`,
-        );
-
-        const parsedArgName: { name: string; isList: boolean } =
-            parseWsdlFieldName(argWsdlFieldName);
-
-        const inputType: SoapType = this.resolveContentToSoapType(
-            inputNamespace,
-            argContent,
-            `arg '${argWsdlFieldName}' of operation '${operation.name()}'`,
-        );
-
-        const input: SoapOperationArg = {
-            name: parsedArgName.name,
-            type: inputType,
-            isList: parsedArgName.isList,
-        };
-        return input;
-    }
-
-    createOperationOutput(operation: NodeSoapOperation): {
-        type: { type: SoapType; isList: boolean };
-        resultField: string;
-    } {
-        const outputContent: WsdlOutputContent = operation.content()['output'];
+    createOperationOutput(operation: NodeSoapOperation): { type: SoapType; isList: boolean } {
+        const outputContent: ElementElement = operation.operationElement()['output'];
 
         this.debug(
             () =>
@@ -130,123 +83,16 @@ export class NodeSoapWsdlResolver {
                     5,
                 )}'`,
         );
-
-        // determine type and field name
-        let resultType: SoapType;
-        let resultFieldName: string;
-        const outputNamespace = targetNamespace(outputContent);
-        const ownerStringForLog: string = `output of operation '${operation.name()}'`;
-        if (!outputContent) {
-            this.warn(
-                () =>
-                    `no definition for output type of operation '${operation.name()}', using 'string'`,
-            );
-            resultType = this.resolveContentToSoapType(
-                outputNamespace,
-                'string',
-                ownerStringForLog,
-            );
-        } else {
-            const outputContentKeys: string[] = nonNamespaceKeys(outputContent);
-
-            if (outputContentKeys.length <= 0) {
-                // content has no sub content
-                // void operation; use String as result type. when executed, it will return null
-                resultFieldName = null;
-                resultType = this.resolveContentToSoapType(
-                    outputNamespace,
-                    'string',
-                    ownerStringForLog,
-                );
-            } else {
-                if (outputContentKeys.length > 1) {
-                    // content has multiple fields, use the first one
-                    // @todo maybe better build an extra type for this case, but how to name it?
-                    this.warn(
-                        () =>
-                            `multiple result fields in output definition of operation '${operation.name()}', using first one`,
-                    );
-                }
-
-                resultFieldName = outputContentKeys[0];
-                const resultContent: WsdlResultContent = outputContent[resultFieldName];
-
-                if (!resultContent) {
-                    this.warn(
-                        () =>
-                            `no type definition for result field '${resultFieldName}' in output definition for operation '${operation.name()}', using 'string'`,
-                    );
-                    resultType = this.resolveContentToSoapType(
-                        outputNamespace,
-                        'string',
-                        ownerStringForLog,
-                    );
-                } else {
-                    resultType = this.resolveContentToSoapType(
-                        outputNamespace,
-                        resultContent,
-                        ownerStringForLog,
-                    );
-                }
-            }
-        }
-
-        const parsedResultFieldName = parseWsdlFieldName(resultFieldName);
-
-        return {
-            type: {
-                type: resultType,
-                isList: parsedResultFieldName.isList,
-            },
-            resultField: parsedResultFieldName.name,
-        };
-    }
-
-    private resolveContentToSoapType(
-        parentNamespace: string,
-        typeContent: WsdlTypeContent,
-        ownerStringForLog: string,
-    ): SoapType {
-        this.debug(
-            () =>
-                `resolving soap type for ${ownerStringForLog} from content '${inspect(
-                    typeContent,
-                    false,
-                    3,
-                )}'`,
+        const ns = resolveNamespace(outputContent);
+        const outputType = this.resolveWsdlNameToSoapType(
+            ns,
+            withoutNamespace(outputContent.$lookupType),
+            `return type of operation '${operation.name()}`,
         );
-
-        // determine name of the type
-        let wsdlTypeName;
-        let namespace;
-        if (!typeContent) {
-            this.warn(() => `no type definition for ${ownerStringForLog}, using 'string'`);
-            wsdlTypeName = 'string';
-            namespace = parentNamespace;
-        } else if (typeof typeContent === 'string') {
-            // primitive type
-            wsdlTypeName = withoutNamespace(typeContent);
-            namespace = parentNamespace;
-        } else {
-            wsdlTypeName = this.findTypeName(typeContent);
-            if (!wsdlTypeName) {
-                this.warn(() => `no type name found for ${ownerStringForLog}, using 'string'`);
-                wsdlTypeName = 'string';
-            }
-            namespace = targetNamespace(typeContent);
-        }
-
-        return this.resolveWsdlNameToSoapType(namespace, wsdlTypeName, ownerStringForLog);
-    }
-
-    private findTypeName(content: WsdlTypeContent): string {
-        const types = this.wsdl.definitions.descriptions.types;
-        for (let key in types) {
-            if (types[key] === content) {
-                return key;
-            }
-        }
-        return null;
+        return {
+            type: outputType,
+            isList: isListType(outputContent),
+        };
     }
 
     resolveWsdlNameToSoapType(
@@ -272,77 +118,124 @@ export class NodeSoapWsdlResolver {
         }
 
         // get the defition of the type from the schema section in the WSDL
-        const xsdTypeDefinition: XsdTypeDefinition = this.findXsdTypeDefinition(
-            namespace,
-            wsdlTypeName,
-        );
+        const schemaObject = this.wsdl.findSchemaObject(namespace, wsdlTypeName);
 
-        if (!xsdTypeDefinition) {
+        if (!schemaObject) {
             // has no type definition
-            // --> primitive type, e.g. 'string'
-            const soapType: string = wsdlTypeName;
-            this.alreadyResolved.set(namespace + wsdlTypeName, soapType);
-
-            this.debug(
-                () =>
-                    `resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to primitive type '${soapType}'`,
-            );
-
-            return soapType;
-        } else {
-            // create a new object type
-            const soapType: SoapObjectType = {
-                name: xsdTypeDefinition.$name,
-                base: null,
-                fields: null,
+            // This happens in case of bad wsdl/xsd or in case of XMLSchema defined simple types
+            const soapType: SoapSimpleType = {
+                kind: 'simpleType',
+                name: wsdlTypeName,
+                namespace: namespace,
             };
             this.alreadyResolved.set(namespace + wsdlTypeName, soapType);
 
-            // resolve bindings (field types, base type) after type has been registered to resolve circular dependencies
-            this.resolveTypeBody(soapType, namespace, xsdTypeDefinition);
-
             this.debug(
                 () =>
-                    `resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to object type '${inspect(
-                        soapType,
-                        false,
-                        3,
-                    )}'`,
+                    `resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to simple type '${soapType}'`,
             );
-
             return soapType;
         }
+
+        let soapType: SoapType;
+        switch (schemaObject.constructor) {
+            case ComplexTypeElement:
+                soapType = {
+                    kind: 'complexType',
+                    name: schemaObject.$name,
+                    namespace: namespace,
+                    base: null,
+                    fields: null,
+                };
+                break;
+            case SimpleTypeElement:
+                soapType = {
+                    kind: 'simpleType',
+                    name: schemaObject.$name,
+                    namespace: namespace,
+                    base: null,
+                };
+                break;
+            case ElementElement:
+                if (schemaObject.$type) {
+                    const ns = resolveNamespace(schemaObject);
+                    const type = this.findXsdTypeDefinition(ns, schemaObject.$type);
+                    return this.resolveWsdlNameToSoapType(
+                        ns,
+                        withoutNamespace(schemaObject.$lookupType),
+                        `return type of element '${schemaObject.$name}`,
+                    );
+                } else {
+                    // must be anonymous
+                    return this.resolveAnonymousTypeToSoapType(schemaObject, schemaObject.$name);
+                }
+            default:
+                soapType = XS_STRING;
+                this.warn(
+                    () =>
+                        `unsupported element '${schemaObject.name}' as operation message part. Using string.`,
+                );
+        }
+
+        this.alreadyResolved.set(namespace + wsdlTypeName, soapType);
+
+        // resolve bindings (field types, base type) after type has been registered to resolve circular dependencies
+        if (!(soapType instanceof ElementElement)) {
+            try {
+                this.resolveTypeBody(soapType, namespace, schemaObject);
+            } catch (e) {
+                if (soapType.kind === 'complexType') {
+                    soapType.fields = undefined;
+                } else {
+                    soapType = XS_STRING;
+                }
+            }
+        }
+
+        this.debug(
+            () =>
+                `resolved namespace: '${namespace}', typeName: '${wsdlTypeName}' to object type '${inspect(
+                    soapType,
+                    false,
+                    3,
+                )}'`,
+        );
+        return soapType;
     }
 
     private resolveAnonymousTypeToSoapType(
-        xsdFieldDefinition: XsdFieldDefinition,
-        parentSoapType: SoapObjectType,
+        xsdFieldDefinition: ElementElement,
+        generatedTypeName: string,
     ): SoapType {
-        const namespace = xsdFieldDefinition.$targetNamespace;
-        const ownerStringForLog = `field '${xsdFieldDefinition.$name}' of soap type '${parentSoapType.name}'`;
+        const namespace = resolveNamespace(xsdFieldDefinition);
+        let existingDef = this.findXsdTypeDefinition(namespace, generatedTypeName);
+        while (!!existingDef && !(existingDef instanceof ElementElement)) {
+            generatedTypeName = generatedTypeName + '_';
+            existingDef = this.findXsdTypeDefinition(namespace, generatedTypeName);
+        }
+        const ownerStringForLog = `field '${xsdFieldDefinition.$name}' of soap type '${generatedTypeName}'`;
         this.debug(
             () => `resolving anonymous type for ${ownerStringForLog} from namespace '${namespace}'`,
         );
-
-        let generatedTypeName = `${parentSoapType.name}_${capitalizeFirstLetter(
-            xsdFieldDefinition.$name,
-        )}`;
-        while (!!this.findXsdTypeDefinition(namespace, generatedTypeName)) {
-            generatedTypeName = generatedTypeName + '_';
-        }
-
-        const soapType: SoapObjectType = {
+        // TODO: fix for simple types
+        const soapType: SoapComplexType = {
+            kind: 'complexType',
             name: generatedTypeName,
+            namespace: xsdFieldDefinition.$targetNamespace,
             base: null,
             fields: null,
         };
 
         // resolve bindings (field types, base type)
-        const bodyTypeDefinition: XsdTypeDefinition = xsdFieldDefinition.children
+        const bodyTypeDefinition = xsdFieldDefinition.children
             ? xsdFieldDefinition.children[0]
             : undefined;
         if (bodyTypeDefinition) {
-            this.resolveTypeBody(soapType, namespace, bodyTypeDefinition);
+            this.resolveTypeBody(
+                soapType,
+                namespace,
+                bodyTypeDefinition as XsdSupportedTypeDefinition,
+            );
             this.debug(
                 () =>
                     `resolved namespace: '${namespace}', typeName: '${generatedTypeName}' to object type '${inspect(
@@ -360,14 +253,14 @@ export class NodeSoapWsdlResolver {
         return soapType;
     }
 
-    private findXsdTypeDefinition(namespace: string, typeName: string): XsdTypeDefinition {
+    private findXsdTypeDefinition(namespace: string, typeName: string): XsdSupportedTypeDefinition {
         return this.wsdl.findSchemaObject(namespace, typeName);
     }
 
     private resolveTypeBody(
-        soapType: SoapObjectType,
+        soapType: SoapType,
         namespace: string,
-        typeDefinition: XsdTypeDefinition,
+        typeDefinition: ComplexTypeElement | SimpleTypeElement,
     ): void {
         this.debug(
             () =>
@@ -382,48 +275,80 @@ export class NodeSoapWsdlResolver {
 
         const typeName: string = typeDefinition.$name;
 
-        let fields: XsdFieldDefinition[] = null;
+        let fields: Element[];
         let baseTypeName: string = null;
 
-        const body: XsdTypeDefinitionBody = typeDefinition.children[0];
-
-        if (body.name === 'sequence') {
-            const sequence: XsdSequence = body;
-            fields = sequence.children || [];
-        } else if (body.name === 'complexContent') {
-            const extension: XsdExtension = body.children[0];
-            const sequence: XsdSequence = extension.children[0];
-            baseTypeName = withoutNamespace(extension.$base);
-            fields = sequence.children || [];
-        } else {
-            this.warn(
-                () => `cannot parse fields for soap type '${typeName}', leaving fields empty`,
-            );
-            fields = [];
+        const body: Element = typeDefinition.children[0];
+        switch (body?.constructor) {
+            case SequenceElement:
+                fields = this.extractChildren(body as SequenceElement);
+                break;
+            case ComplexContentElement:
+                const extensionOrRestriction = body.children.find(
+                    (child) =>
+                        child instanceof ExtensionElement || child instanceof RestrictionElement,
+                ) as ExtensionElement | RestrictionElement;
+                baseTypeName = extensionOrRestriction.$base;
+                const sequence: SequenceElement = extensionOrRestriction.children.find(
+                    (child) => child instanceof SequenceElement,
+                ) as SequenceElement;
+                if (!sequence) {
+                    this.warn(
+                        () =>
+                            `cannot parse fields for soap type '${typeName}' as currently only restrictions/extensions with sequence are supported. leaving fields empty`,
+                    );
+                    throw new Error('Unsupported xsd definition.');
+                } else {
+                    fields = this.extractChildren(sequence);
+                }
+                baseTypeName = withoutNamespace(extensionOrRestriction.$base);
+                break;
+            case SimpleTypeElement:
+                const restriction = body.children.find(
+                    (child) => child instanceof RestrictionElement,
+                ) as RestrictionElement;
+                baseTypeName = withoutNamespace(restriction.$base);
+                break;
+            default:
+                this.warn(() => `cannot parse fields for soap type '${typeName}'`);
+                fields = undefined;
         }
 
-        const soapFields: SoapField[] = fields.map((field: XsdFieldDefinition) => {
-            let type;
-            if (field.$type) {
-                type = this.resolveWsdlNameToSoapType(
-                    field.$targetNamespace,
-                    withoutNamespace(field.$type),
-                    `field '${field.$name}' of soap type '${soapType.name}'`,
-                );
-            } else {
-                type = this.resolveAnonymousTypeToSoapType(field, soapType);
-            }
-            return {
-                name: field.$name,
-                type,
-                isList: !!field.$maxOccurs && field.$maxOccurs === 'unbounded',
-            };
-        });
+        // todo extract
+        if (soapType.kind === 'complexType' && fields) {
+            const soapFields: SoapField[] = fields.map((field: ElementElement) => {
+                let type;
+                if (field.$type) {
+                    const ns = resolveNamespace(field);
+                    type = this.resolveWsdlNameToSoapType(
+                        ns,
+                        withoutNamespace(field.$type),
+                        `field '${field.$name}' of soap type '${soapType.name}'`,
+                    );
+                } else if (field.children.length) {
+                    let generatedTypeName = `${soapType.name}_${capitalizeFirstLetter(
+                        field.$name,
+                    )}`;
+                    type = this.resolveAnonymousTypeToSoapType(field, generatedTypeName);
+                } else {
+                    this.warn(
+                        () =>
+                            `Impossible to generate type for field without type and without children, using string for '${field.$name}'.`,
+                    );
+                    type = XS_STRING;
+                }
+                return {
+                    name: field.$name,
+                    type,
+                    isList: getIsList(field),
+                };
+            });
+            soapType.fields = soapFields;
+        }
 
-        // @todo in XSD it is possible to inherit a type from a primitive ... may have to handle this
-        const baseType: SoapObjectType = !baseTypeName
+        const baseType: SoapComplexType = !baseTypeName
             ? null
-            : <SoapObjectType>(
+            : <SoapComplexType>(
                   this.resolveWsdlNameToSoapType(
                       namespace,
                       baseTypeName,
@@ -431,49 +356,59 @@ export class NodeSoapWsdlResolver {
                   )
               );
 
-        soapType.fields = soapFields;
         soapType.base = baseType;
     }
-}
 
-function nonNamespaceKeys(obj: any): string[] {
-    return !obj ? [] : Object.keys(obj).filter((key) => !isNamespaceKey(key));
+    private extractChildren(sequence: SequenceElement): Element[] {
+        const result: Element[] = [];
+        sequence.children.forEach((child) => {
+            switch (child.constructor) {
+                case ElementElement:
+                    result.push(child);
+                    break;
+                default:
+                    this.warn(
+                        () => `${child.name} is currently not supported in field '${child.$name}'.`,
+                    );
+                    throw new Error('Unsupported definition');
+            }
+        });
+        return result;
+    }
 }
 
 function targetNamespace(content: any) {
     return content['targetNamespace'];
 }
 
-function isNamespaceKey(key: string): boolean {
-    return key === 'targetNSAlias' || key === 'targetNamespace';
-}
-
-function withoutNamespace(value: string): string {
+export function withoutNamespace(value: string): string {
     if (!value) {
         return value;
     }
-    const matcher: RegExpMatchArray = value.match(/[a-zA-Z0-9]+\:(.+)/);
+    const matcher: RegExpMatchArray = value.match(/[a-zA-Z0-9]+:(.+)/);
     return !matcher || matcher.length < 2 ? value : matcher[1];
 }
 
-function isWsdlListFieldName(wsdlFieldName: string): boolean {
-    return !!wsdlFieldName && wsdlFieldName.endsWith('[]');
-}
-
-function parseWsdlFieldName(wsdlFieldName: string): { name: string; isList: boolean } {
-    if (isWsdlListFieldName(wsdlFieldName)) {
-        return {
-            name: wsdlFieldName.substring(0, wsdlFieldName.length - 2),
-            isList: true,
-        };
-    } else {
-        return {
-            name: wsdlFieldName,
-            isList: false,
-        };
+function namespacePrefix(value: string): string {
+    if (!value) {
+        return value;
     }
+    const matcher: RegExpMatchArray = value.match(/([a-zA-Z0-9]+):.+/);
+    return !matcher || matcher.length < 2 ? value : matcher[1];
 }
 
 function capitalizeFirstLetter(value: string) {
     return value.charAt(0).toUpperCase() + value.substring(1);
+}
+
+function getIsList(field: { $maxOccurs?: string }): boolean {
+    return !!field.$maxOccurs && field.$maxOccurs === 'unbounded';
+}
+
+function resolveNamespace(element: ElementElement) {
+    const prefix = namespacePrefix(element.$type || element.$lookupType);
+    // if (element.ignoredNamespaces?.includes(prefix)) {
+    //     return element.$targetNamespace
+    // }
+    return element.xmlns[prefix] || element.schemaXmlns[prefix] || element.$targetNamespace;
 }

@@ -1,14 +1,14 @@
 import {
-    GraphQLScalarType,
-    GraphQLID,
-    GraphQLString,
-    GraphQLFloat,
     GraphQLBoolean,
+    GraphQLFloat,
+    GraphQLID,
+    GraphQLInputType,
     GraphQLInt,
     GraphQLOutputType,
-    GraphQLInputType,
+    GraphQLScalarType,
+    GraphQLString,
 } from 'graphql';
-import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-scalars';
+import { GraphQLDate, GraphQLDateTime, GraphQLTime } from 'graphql-scalars';
 
 /**
  * Resolver that converts WSDL types, that are not fully defined in the WSDL itself, to GraphQL types.
@@ -17,9 +17,10 @@ import { GraphQLDateTime, GraphQLTime, GraphQLDate } from 'graphql-scalars';
  * You can provide your own resolver to handle custom types of your WSDL.
  * But you must still provide resolvment for primitive types like 'string', e.g by re-using DefaultTypeResolver.
  */
+
 export interface CustomTypeResolver {
-    outputType(typeName: string): GraphQLOutputType;
-    inputType(typeName: string): GraphQLInputType;
+    outputType(typeName: string, namespace: string): GraphQLOutputType;
+    inputType(typeName: string, namespace: string): GraphQLInputType;
 }
 
 /**
@@ -76,15 +77,15 @@ export class DefaultTypeResolver implements CustomTypeResolver {
     date = GraphQLDate;
     time = GraphQLTime;
 
-    resolve(typeName: string): GraphQLScalarType {
-        return this[typeName];
+    resolve(typeName: string, namespace: string): GraphQLScalarType {
+        return this[`${namespace}:${typeName}`] || this[typeName];
     }
 
-    outputType(typeName: string): GraphQLOutputType {
-        return this.resolve(typeName);
+    outputType(typeName: string, namespace: string): GraphQLOutputType {
+        return this.resolve(typeName, namespace);
     }
 
-    inputType(typeName: string): GraphQLInputType {
-        return this.resolve(typeName);
+    inputType(typeName: string, namespace: string): GraphQLInputType {
+        return this.resolve(typeName, namespace);
     }
 }

@@ -32,34 +32,37 @@ export interface SoapOperation {
     /**
      * Arguments that this operation accepts.
      */
-    args(): SoapOperationArg[];
+    inputType(): SoapType;
     /**
      * Output that this operation provides if called.
      */
     output(): { type: SoapType; isList: boolean };
-    /**
-     * The field in the SOAP output message that contains the actual output.
-     */
-    resultField(): string;
 }
 
 /**
  * A type declared in the WSDL.
  */
-export type SoapType = SoapObjectType | SoapPrimitiveType;
+export type SoapType = SoapComplexType | SoapSimpleType;
 
 /**
- * A primitive type in the WSDL - only defined by its name.
+ * A primitive type in the WSDL.
  */
-export type SoapPrimitiveType = string;
+export interface SoapSimpleType {
+    kind: 'simpleType';
+    namespace: string;
+    name: string;
+    base?: SoapSimpleType;
+}
 
 /**
  * An object type in the WSDL.
  * Defined by its name, fields and maybe a base type.
  */
-export interface SoapObjectType {
+export interface SoapComplexType {
+    kind: 'complexType';
     name: string;
-    base: SoapObjectType;
+    namespace: string;
+    base: SoapComplexType;
     fields: SoapField[];
 }
 
