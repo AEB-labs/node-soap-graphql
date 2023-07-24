@@ -160,14 +160,18 @@ export class NodeSoapWsdlResolver {
                 if (schemaObject.$type) {
                     const ns = resolveNamespace(schemaObject);
                     const type = this.findXsdTypeDefinition(ns, schemaObject.$type);
-                    return this.resolveWsdlNameToSoapType(
+                    const soapType = this.resolveWsdlNameToSoapType(
                         ns,
                         withoutNamespace(schemaObject.$lookupType),
                         `return type of element '${schemaObject.$name}`,
                     );
+                    this.alreadyResolved.set(soapType.namespace + soapType.name, soapType);
+                    return soapType;
                 } else {
                     // must be anonymous
-                    return this.resolveAnonymousTypeToSoapType(schemaObject, schemaObject.$name);
+                    const soapType = this.resolveAnonymousTypeToSoapType(schemaObject, schemaObject.$name);
+                    this.alreadyResolved.set(soapType.namespace + soapType.name, soapType);
+                    return soapType;
                 }
             default:
                 soapType = XS_STRING;
