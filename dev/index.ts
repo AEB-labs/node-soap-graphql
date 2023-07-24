@@ -5,11 +5,13 @@ import * as http from 'http';
 // http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL
 // http://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL
 // https://www.uid-wse.admin.ch/V5.0/PublicServices.svc?WSDL
+// https://ws.ecotransit.org/ETWStandard?wsdl
+// https://ec.europa.eu/taxation_customs/dds2/eos/validation/services/validation?wsdl
 
 soapGraphqlSchema({
     debug: true,
     createClient: {
-        url: 'http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL',
+        url: 'https://ws.ecotransit.org/ETWStandard?wsdl',
     },
 }).then((schema) => {
     const handler = createHandler({ schema });

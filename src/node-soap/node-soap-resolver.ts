@@ -1,4 +1,5 @@
 import {
+    SoapAttribute,
     SoapComplexType,
     SoapField,
     SoapSimpleType,
@@ -146,6 +147,7 @@ export class NodeSoapWsdlResolver {
                     namespace: namespace,
                     base: null,
                     fields: null,
+                    attributes: null,
                 };
                 break;
             case SimpleTypeElement:
@@ -169,7 +171,10 @@ export class NodeSoapWsdlResolver {
                     return soapType;
                 } else {
                     // must be anonymous
-                    const soapType = this.resolveAnonymousTypeToSoapType(schemaObject, schemaObject.$name);
+                    const soapType = this.resolveAnonymousTypeToSoapType(
+                        schemaObject,
+                        schemaObject.$name,
+                    );
                     this.alreadyResolved.set(soapType.namespace + soapType.name, soapType);
                     return soapType;
                 }
@@ -228,6 +233,7 @@ export class NodeSoapWsdlResolver {
             namespace: xsdFieldDefinition.$targetNamespace,
             base: null,
             fields: null,
+            attributes: null,
         };
 
         // resolve bindings (field types, base type)
@@ -283,6 +289,9 @@ export class NodeSoapWsdlResolver {
         let baseTypeName: string = null;
 
         const body: Element = typeDefinition.children[0];
+        const attributes: Element[] = typeDefinition.children.filter(
+            (t) => t.nsName == 'xs:attribute',
+        );
         switch (body?.constructor) {
             case SequenceElement:
                 fields = this.extractChildren(body as SequenceElement);
@@ -318,36 +327,9 @@ export class NodeSoapWsdlResolver {
                 fields = undefined;
         }
 
-        // todo extract
         if (soapType.kind === 'complexType' && fields) {
-            const soapFields: SoapField[] = fields.map((field: ElementElement) => {
-                let type;
-                if (field.$type) {
-                    const ns = resolveNamespace(field);
-                    type = this.resolveWsdlNameToSoapType(
-                        ns,
-                        withoutNamespace(field.$type),
-                        `field '${field.$name}' of soap type '${soapType.name}'`,
-                    );
-                } else if (field.children.length) {
-                    let generatedTypeName = `${soapType.name}_${capitalizeFirstLetter(
-                        field.$name,
-                    )}`;
-                    type = this.resolveAnonymousTypeToSoapType(field, generatedTypeName);
-                } else {
-                    this.warn(
-                        () =>
-                            `Impossible to generate type for field without type and without children, using string for '${field.$name}'.`,
-                    );
-                    type = XS_STRING;
-                }
-                return {
-                    name: field.$name,
-                    type,
-                    isList: getIsList(field),
-                };
-            });
-            soapType.fields = soapFields;
+            soapType.fields = this.resolveSoapFields(fields, soapType);
+            soapType.attributes = this.resolveSoapAttributes(attributes, soapType);
         }
 
         const baseType: SoapComplexType = !baseTypeName
@@ -361,6 +343,64 @@ export class NodeSoapWsdlResolver {
               );
 
         soapType.base = baseType;
+    }
+
+    private resolveSoapFields(fieldElements: Element[], soapType: SoapComplexType) {
+        const fields = fieldElements.map((field: ElementElement) => {
+            let type;
+            if (field.$type) {
+                const ns = resolveNamespace(field);
+                type = this.resolveWsdlNameToSoapType(
+                    ns,
+                    withoutNamespace(field.$type),
+                    `field '${field.$name}' of soap type '${soapType.name}'`,
+                );
+            } else if (field.children.length) {
+                let generatedTypeName = `${soapType.name}_${capitalizeFirstLetter(field.$name)}`;
+                type = this.resolveAnonymousTypeToSoapType(field, generatedTypeName);
+            } else {
+                this.warn(
+                    () =>
+                        `Impossible to generate type for field without type and without children, using string for '${field.$name}'.`,
+                );
+                type = XS_STRING;
+            }
+            return {
+                name: field.$name,
+                type,
+                isList: getIsList(field),
+            };
+        });
+        return fields;
+    }
+
+    private resolveSoapAttributes(
+        attributeElements: Element[],
+        soapType: SoapComplexType,
+    ): SoapAttribute[] {
+        const attributes = attributeElements.map((attribute: ElementElement) => {
+            let type;
+            if (attribute.$type) {
+                const ns = resolveNamespace(attribute);
+                type = this.resolveWsdlNameToSoapType(
+                    ns,
+                    withoutNamespace(attribute.$type),
+                    `field '${attribute.$name}' of soap type '${soapType.name}'`,
+                );
+            } else {
+                this.warn(
+                    () =>
+                        `Impossible to generate type for attribute without type and without children, using string for '${attribute.$name}'.`,
+                );
+                type = XS_STRING;
+            }
+            return {
+                name: attribute.$name,
+                type,
+                isList: false,
+            };
+        });
+        return attributes;
     }
 
     private extractChildren(sequence: SequenceElement): Element[] {

@@ -30,6 +30,8 @@ export const defaultInterfaceNameResolver: NameResolver = (soapType: SoapComplex
     return !soapType ? null : !soapType.name ? null : 'i' + capitalizeFirstLetter(soapType.name);
 };
 
+export const defaultAttributesKey = '_attributes';
+
 function capitalizeFirstLetter(value: string) {
     return value.charAt(0).toUpperCase() + value.substring(1);
 }

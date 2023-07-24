@@ -64,6 +64,7 @@ export interface SoapComplexType {
     namespace: string;
     base: SoapComplexType;
     fields: SoapField[];
+    attributes: SoapAttribute[];
 }
 
 export interface SoapField {
@@ -72,4 +73,7 @@ export interface SoapField {
     isList: boolean;
 }
 
-export type SoapOperationArg = SoapField;
+export interface SoapAttribute {
+    name: string;
+    type: SoapSimpleType;
+}

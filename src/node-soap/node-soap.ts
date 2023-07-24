@@ -1,4 +1,5 @@
 import { createClient, BasicAuthSecurity, Client, IOptions, WSDL } from 'soap';
+import { defaultAttributesKey } from '../soap2graphql/name-resolver';
 
 /**
  * Type for the soap-client from node-soap.
@@ -25,8 +26,11 @@ export type NodeSoapOptions = {
 export async function createSoapClient(
     url: string,
     options: NodeSoapOptions = {},
+    attributesKey: string,
 ): Promise<NodeSoapClient> {
-    const opts: IOptions = !options.options ? {} : options.options;
+    const opts: IOptions = !options.options
+        ? { attributesKey }
+        : { ...options.options, attributesKey };
     return new Promise<any>((resolve, reject) => {
         try {
             createClient(url, opts, (err: any, client: Client) => {

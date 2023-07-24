@@ -77,6 +77,13 @@ export type SchemaOptions = {
      * default: WSDL type name + 'Input'.
      */
     scalarNameResolver?: NameResolver;
+
+    /**
+     * default field name for attributes of complex type elements.
+     *
+     * default: __attributes
+     */
+    attributesKey?: string;
 };
 
 export function createSchemaConfig(
