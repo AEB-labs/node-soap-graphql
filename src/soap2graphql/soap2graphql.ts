@@ -54,7 +54,7 @@ export type SchemaOptions = {
      */
     outputNameResolver?: NameResolver;
     /**
-     * Function that proivides the name of a GraphQLInterfaceType.
+     * Function that provides the name of a GraphQLInterfaceType.
      * The created name must be unique in the GraphQL schema!
      * (This is especially important, since SOAP allows to use the same type for input and output, but GraphQL does not)
      *
@@ -62,13 +62,28 @@ export type SchemaOptions = {
      */
     interfaceNameResolver?: NameResolver;
     /**
-     * Function that proivides the name of a GraphQLInputType.
+     * Function that provides the name of a GraphQLInputType.
      * The created name must be unique in the GraphQL schema!
      * (This is especially important, since SOAP allows to use the same type for input and output, but GraphQL does not)
      *
      * default: WSDL type name + 'Input'.
      */
     inputNameResolver?: NameResolver;
+    /**
+     * Function that provides the name of a GraphQLScalarType.
+     * The created name must be unique in the GraphQL schema!
+     * (This is especially important, since SOAP allows to use the same type for input and output, but GraphQL does not)
+     *
+     * default: WSDL type name + 'Input'.
+     */
+    scalarNameResolver?: NameResolver;
+
+    /**
+     * default field name for attributes of complex type elements.
+     *
+     * default: __attributes
+     */
+    attributesKey?: string;
 };
 
 export function createSchemaConfig(

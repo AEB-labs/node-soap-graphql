@@ -1,50 +1,54 @@
 import { SchemaOptions } from './soap2graphql';
 import {
-    defaultOutputNameResolver,
-    defaultInterfaceNameResolver,
+    defaultAttributesKey,
     defaultInputNameResolver,
+    defaultInterfaceNameResolver,
+    defaultOutputNameResolver,
+    defaultScalarNameResolver,
 } from './name-resolver';
 import { DefaultTypeResolver } from './custom-type-resolver';
 import { GraphQLSchemaConfig } from 'graphql/type/schema';
 import { GraphQLString } from 'graphql/type/scalars';
 import {
+    SoapAttribute,
+    SoapComplexType,
     SoapEndpoint,
-    SoapService,
-    SoapPort,
-    SoapOperation,
     SoapField,
+    SoapOperation,
+    SoapPort,
+    SoapService,
+    SoapSimpleType,
     SoapType,
-    SoapObjectType,
-    SoapOperationArg,
 } from './soap-endpoint';
 import { SoapCaller } from './soap-caller';
 import { inspect } from 'util';
 import {
-    GraphQLObjectType,
-    GraphQLFieldConfigMap,
     GraphQLFieldConfig,
     GraphQLFieldConfigArgumentMap,
-    GraphQLOutputType,
+    GraphQLFieldConfigMap,
     GraphQLFieldResolver,
-    GraphQLNonNull,
-    GraphQLResolveInfo,
-    GraphQLInterfaceType,
-    GraphQLList,
-    GraphQLScalarType,
-    GraphQLObjectTypeConfig,
-    GraphQLInterfaceTypeConfig,
-    GraphQLInputType,
+    GraphQLInputFieldConfigMap,
     GraphQLInputObjectType,
     GraphQLInputObjectTypeConfig,
-    GraphQLInputFieldConfigMap,
+    GraphQLInputType,
+    GraphQLInterfaceType,
+    GraphQLInterfaceTypeConfig,
+    GraphQLList,
+    GraphQLObjectType,
+    GraphQLObjectTypeConfig,
+    GraphQLOutputType,
+    GraphQLResolveInfo,
+    GraphQLScalarType,
 } from 'graphql';
 import { Logger } from './logger';
+import { GraphQLJSON } from 'graphql-scalars';
 
 export class SchemaResolver {
     private readonly options: SchemaOptions;
 
     private outputResolver: GraphqlOutputFieldResolver = null;
     private inputResolver: GraphqlInputFieldResolver = null;
+    private scalarResolver: GraphQLScalarResolver;
 
     constructor(
         private soapEndpoint: SoapEndpoint,
@@ -53,6 +57,7 @@ export class SchemaResolver {
         private logger: Logger,
     ) {
         this.options = this.defaultOptions(options);
+        this.scalarResolver = new GraphQLScalarResolver(this.options, this.logger);
     }
 
     defaultOptions(options: SchemaOptions) {
@@ -67,17 +72,32 @@ export class SchemaResolver {
         if (!options.inputNameResolver) {
             options.inputNameResolver = defaultInputNameResolver;
         }
+        if (!options.scalarNameResolver) {
+            options.scalarNameResolver = defaultScalarNameResolver;
+        }
 
         if (!options.customResolver) {
             options.customResolver = new DefaultTypeResolver();
+        }
+
+        if (!options.attributesKey) {
+            options.attributesKey = defaultAttributesKey;
         }
 
         return options;
     }
 
     resolve(): GraphQLSchemaConfig {
-        this.outputResolver = new GraphqlOutputFieldResolver(this.options, this.logger);
-        this.inputResolver = new GraphqlInputFieldResolver(this.options, this.logger);
+        this.outputResolver = new GraphqlOutputFieldResolver(
+            this.scalarResolver,
+            this.options,
+            this.logger,
+        );
+        this.inputResolver = new GraphqlInputFieldResolver(
+            this.scalarResolver,
+            this.options,
+            this.logger,
+        );
 
         return {
             query: this.createQueryObject(),
@@ -203,11 +223,16 @@ export class SchemaResolver {
 
     createSoapOperationFieldArgs(operation: SoapOperation): GraphQLFieldConfigArgumentMap {
         const args: GraphQLFieldConfigArgumentMap = {};
-        operation.args().forEach((soapField: SoapField) => {
-            args[soapField.name] = {
-                type: this.inputResolver.resolve(soapField),
-            };
-        });
+        const inputType = operation.inputType();
+        switch (inputType.kind) {
+            case 'complexType':
+                const gqlInputType = this.inputResolver.resolve({
+                    type: operation.inputType(),
+                }) as GraphQLInputObjectType;
+                return gqlInputType.getFields();
+            case 'simpleType':
+                args['input'] = { type: this.scalarResolver.resolve(inputType) };
+        }
         return args;
     }
 
@@ -239,9 +264,13 @@ class GraphqlOutputFieldResolver {
     private alreadyResolvedOutputTypes: Map<SoapType, GraphQLOutputType> = new Map();
     private alreadyResolvedInterfaceTypes: Map<SoapType, GraphQLInterfaceType> = new Map();
 
-    constructor(private options: SchemaOptions, private logger: Logger) {}
+    constructor(
+        private scalarResolver: GraphQLScalarResolver,
+        private options: SchemaOptions,
+        private logger: Logger,
+    ) {}
 
-    resolve(input: { type: SoapType; isList: boolean }): GraphQLOutputType {
+    resolve(input: { type: SoapType; isList?: boolean }): GraphQLOutputType {
         try {
             const type: GraphQLOutputType = this.resolveOutputType(input.type);
             return input.isList ? new GraphQLList(type) : type;
@@ -258,18 +287,21 @@ class GraphqlOutputFieldResolver {
         if (this.alreadyResolvedOutputTypes.has(soapType)) {
             return this.alreadyResolvedOutputTypes.get(soapType);
         }
-
-        if (typeof soapType === 'string') {
-            const customType: GraphQLOutputType = this.options.customResolver.outputType(soapType);
-            if (!!customType) {
-                this.alreadyResolvedOutputTypes.set(soapType, customType);
-                return customType;
-            }
+        const customType: GraphQLOutputType = this.options.customResolver.outputType(
+            soapType.name,
+            soapType.namespace,
+        );
+        if (!!customType) {
+            this.alreadyResolvedOutputTypes.set(soapType, customType);
+            return customType;
+        }
+        if (soapType.kind === 'simpleType') {
+            return this.scalarResolver.resolveScalar(soapType);
         } else {
-            const objectType: GraphQLObjectType = this.createObjectType(soapType);
-            if (!!objectType) {
-                this.alreadyResolvedOutputTypes.set(soapType, objectType);
-                return objectType;
+            const type: GraphQLObjectType | GraphQLScalarType = this.createObjectType(soapType);
+            if (!!type) {
+                this.alreadyResolvedOutputTypes.set(soapType, type);
+                return type;
             }
         }
 
@@ -280,14 +312,19 @@ class GraphqlOutputFieldResolver {
         return GraphQLString;
     }
 
-    private createObjectType(soapType: SoapObjectType): GraphQLObjectType {
+    private createObjectType(soapType: SoapComplexType): GraphQLObjectType | GraphQLScalarType {
+        if (soapType.fields == undefined) {
+            // something has gone wrong during type resolution to be able to continue untyped in cases of sudden unavailability of xsd sources etc.
+            return GraphQLJSON;
+        }
         return new GraphQLObjectType(this.createObjectTypeConfig(soapType));
     }
 
-    private createObjectTypeConfig(soapType: SoapObjectType): GraphQLObjectTypeConfig<any, any> {
+    private createObjectTypeConfig(soapType: SoapComplexType): GraphQLObjectTypeConfig<any, any> {
         const fields = (): GraphQLFieldConfigMap<any, any> => {
             const fieldMap: GraphQLFieldConfigMap<any, any> = {};
             this.appendObjectTypeFields(fieldMap, soapType);
+            this.appendAttributesType(fieldMap, soapType);
             if (Object.keys(fieldMap).length == 0) {
                 fieldMap['dummy'] = {
                     type: GraphQLString,
@@ -312,19 +349,27 @@ class GraphqlOutputFieldResolver {
 
     private appendObjectTypeFields(
         fieldMap: GraphQLFieldConfigMap<any, any>,
-        soapType: SoapObjectType,
+        soapType: SoapComplexType,
     ): void {
         this.appendTypeFields(fieldMap, soapType);
     }
 
-    private appendInterfaces(interfaces: GraphQLInterfaceType[], soapType: SoapObjectType): void {
-        if (!!soapType.base) {
+    private appendInterfaces(interfaces: GraphQLInterfaceType[], soapType: SoapComplexType): void {
+        // we only add interfaces with fields
+        if (!!soapType.base && this.hasInterfaceFieldsRecursive(soapType.base)) {
             interfaces.push(this.resolveInterfaceType(soapType.base));
             this.appendInterfaces(interfaces, soapType.base);
         }
     }
 
-    private resolveInterfaceType(soapType: SoapObjectType): GraphQLInterfaceType {
+    private hasInterfaceFieldsRecursive(soapType: SoapComplexType) {
+        if (soapType.fields.length) {
+            return true;
+        }
+        return soapType.base && this.hasInterfaceFieldsRecursive(soapType.base);
+    }
+
+    private resolveInterfaceType(soapType: SoapComplexType): GraphQLInterfaceType {
         if (this.alreadyResolvedInterfaceTypes.has(soapType)) {
             return this.alreadyResolvedInterfaceTypes.get(soapType);
         }
@@ -334,12 +379,12 @@ class GraphqlOutputFieldResolver {
         return interfaceType;
     }
 
-    private createInterfaceType(soapType: SoapObjectType): GraphQLInterfaceType {
+    private createInterfaceType(soapType: SoapComplexType): GraphQLInterfaceType {
         return new GraphQLInterfaceType(this.createInterfaceTypeConfig(soapType));
     }
 
     private createInterfaceTypeConfig(
-        soapType: SoapObjectType,
+        soapType: SoapComplexType,
     ): GraphQLInterfaceTypeConfig<any, any> {
         const fields = (): GraphQLFieldConfigMap<any, any> => {
             const fieldMap: GraphQLFieldConfigMap<any, any> = {};
@@ -365,14 +410,14 @@ class GraphqlOutputFieldResolver {
 
     private appendInterfaceTypeFields(
         fieldMap: GraphQLFieldConfigMap<any, any>,
-        soapType: SoapObjectType,
+        soapType: SoapComplexType,
     ): void {
         this.appendTypeFields(fieldMap, soapType);
     }
 
     private appendTypeFields(
         fieldMap: GraphQLFieldConfigMap<any, any>,
-        soapType: SoapObjectType,
+        soapType: SoapComplexType,
     ): void {
         soapType.fields.forEach((soapField: SoapField) => {
             fieldMap[soapField.name] = {
@@ -383,14 +428,79 @@ class GraphqlOutputFieldResolver {
             this.appendTypeFields(fieldMap, soapType.base);
         }
     }
+
+    private appendAttributesType(
+        fieldMap: GraphQLFieldConfigMap<any, any>,
+        soapType: SoapComplexType,
+    ): void {
+        if (soapType.attributes?.length) {
+            const attributesFieldMap: GraphQLFieldConfigMap<any, any> = {};
+            soapType.attributes.forEach((soapAttribute: SoapAttribute) => {
+                attributesFieldMap[soapAttribute.name] = {
+                    type: this.resolve(soapAttribute),
+                };
+            });
+            fieldMap[this.options.attributesKey] = {
+                description: `Attribute values for '${soapType.name}'`,
+                type: new GraphQLObjectType({
+                    name: `${soapType.name}_Attributes`,
+                    description: `Attribute values for '${soapType.name}'`,
+                    fields: attributesFieldMap,
+                }),
+            };
+        }
+    }
+}
+
+class GraphQLScalarResolver {
+    private alreadyResolved: Map<SoapType, GraphQLScalarType> = new Map();
+
+    constructor(private options: SchemaOptions, private logger: Logger) {}
+
+    resolve(type: SoapSimpleType): GraphQLScalarType {
+        try {
+            return this.resolveScalar(type);
+        } catch (err) {
+            const errStacked = new Error(
+                `could not resolve scalar type for ${inspect(type.name, false, 4)}`,
+            );
+            errStacked.stack += '\nCaused by: ' + err.stack;
+            throw errStacked;
+        }
+    }
+
+    resolveScalar(soapType: SoapType): GraphQLScalarType {
+        if (this.alreadyResolved.has(soapType)) {
+            return this.alreadyResolved.get(soapType);
+        }
+        const type = this.createScalarType(soapType as SoapSimpleType);
+        if (!!type) {
+            this.alreadyResolved.set(soapType, type);
+            return type;
+        }
+        this.logger.warn(() => `could not resolve scalar type '${soapType}'; using GraphQLString`);
+        this.alreadyResolved.set(soapType, GraphQLString);
+        return GraphQLString;
+    }
+
+    private createScalarType(soapType: SoapSimpleType): GraphQLScalarType {
+        return new GraphQLScalarType({
+            ...soapType,
+            name: this.options.inputNameResolver(soapType),
+        });
+    }
 }
 
 class GraphqlInputFieldResolver {
     private alreadyResolved: Map<SoapType, GraphQLInputType> = new Map();
 
-    constructor(private options: SchemaOptions, private logger: Logger) {}
+    constructor(
+        private scalarResolver: GraphQLScalarResolver,
+        private options: SchemaOptions,
+        private logger: Logger,
+    ) {}
 
-    resolve(input: { type: SoapType; isList: boolean }): GraphQLInputType {
+    resolve(input: { type: SoapType; isList?: boolean }): GraphQLInputType {
         try {
             const type: GraphQLInputType = this.resolveInputType(input.type);
             return input.isList ? new GraphQLList(type) : type;
@@ -407,19 +517,24 @@ class GraphqlInputFieldResolver {
         if (this.alreadyResolved.has(soapType)) {
             return this.alreadyResolved.get(soapType);
         }
+        const customType: GraphQLInputType = this.options.customResolver.inputType(
+            soapType.name,
+            soapType.namespace,
+        );
+        if (!!customType) {
+            this.alreadyResolved.set(soapType, customType);
+            return customType;
+        }
 
-        if (typeof soapType === 'string') {
-            const customType: GraphQLInputType = this.options.customResolver.inputType(soapType);
-            if (!!customType) {
-                this.alreadyResolved.set(soapType, customType);
-                return customType;
-            }
-        } else {
-            const objectType: GraphQLInputObjectType = this.createObjectType(soapType);
-            if (!!objectType) {
-                this.alreadyResolved.set(soapType, objectType);
-                return objectType;
-            }
+        if (soapType.kind == 'simpleType') {
+            return this.scalarResolver.resolveScalar(soapType as SoapSimpleType);
+        }
+        const objectType: GraphQLInputObjectType | GraphQLScalarType = this.createObjectType(
+            soapType as SoapComplexType,
+        );
+        if (!!objectType) {
+            this.alreadyResolved.set(soapType, objectType);
+            return objectType;
         }
 
         this.logger.warn(() => `could not resolve input type '${soapType}'; using GraphQLString`);
@@ -427,14 +542,21 @@ class GraphqlInputFieldResolver {
         return GraphQLString;
     }
 
-    private createObjectType(soapType: SoapObjectType): GraphQLInputObjectType {
+    private createObjectType(
+        soapType: SoapComplexType,
+    ): GraphQLInputObjectType | GraphQLScalarType {
+        if (soapType.fields == undefined) {
+            // something has gone wrong during type resolution to be able to continue untyped in cases of sudden unavailability of xsd sources etc.
+            return GraphQLJSON;
+        }
         return new GraphQLInputObjectType(this.createObjectTypeConfig(soapType));
     }
 
-    private createObjectTypeConfig(soapType: SoapObjectType): GraphQLInputObjectTypeConfig {
+    private createObjectTypeConfig(soapType: SoapComplexType): GraphQLInputObjectTypeConfig {
         const fields = (): GraphQLInputFieldConfigMap => {
             const fieldMap: GraphQLInputFieldConfigMap = {};
             this.appendObjectTypeFields(fieldMap, soapType);
+            this.appendAttributesType(fieldMap, soapType);
             if (Object.keys(fieldMap).length == 0) {
                 fieldMap['dummy'] = {
                     type: GraphQLString,
@@ -452,7 +574,7 @@ class GraphqlInputFieldResolver {
 
     private appendObjectTypeFields(
         fieldMap: GraphQLInputFieldConfigMap,
-        soapType: SoapObjectType,
+        soapType: SoapComplexType,
     ): void {
         soapType.fields.forEach((soapField: SoapField) => {
             fieldMap[soapField.name] = {
@@ -461,6 +583,28 @@ class GraphqlInputFieldResolver {
         });
         if (!!soapType.base) {
             this.appendObjectTypeFields(fieldMap, soapType.base);
+        }
+    }
+
+    private appendAttributesType(
+        fieldMap: GraphQLInputFieldConfigMap,
+        soapType: SoapComplexType,
+    ): void {
+        if (soapType.attributes?.length) {
+            const attributesFieldMap: GraphQLInputFieldConfigMap = {};
+            soapType.attributes.forEach((soapAttribute: SoapAttribute) => {
+                attributesFieldMap[soapAttribute.name] = {
+                    type: this.resolve(soapAttribute),
+                };
+            });
+            fieldMap[this.options.attributesKey] = {
+                description: `Attribute values for '${soapType.name}'`,
+                type: new GraphQLInputObjectType({
+                    name: `${soapType.name}Input_Attributes`,
+                    description: `Attribute values for '${soapType.name}'`,
+                    fields: attributesFieldMap,
+                }),
+            };
         }
     }
 }

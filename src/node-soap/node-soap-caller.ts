@@ -84,13 +84,7 @@ export class NodeSoapCaller implements SoapCaller {
         this.debug(
             () => `operation '${input.operation.name()}' returned '${inspect(result, false, 5)}'`,
         );
-
-        if (!input.operation.resultField()) {
-            // void operation
-            return !result ? null : JSON.stringify(result);
-        } else {
-            return !result ? null : result[input.operation.resultField()];
-        }
+        return result;
     }
 
     protected debug(message: LateResolvedMessage): void {

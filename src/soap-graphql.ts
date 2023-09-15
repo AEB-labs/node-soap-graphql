@@ -6,6 +6,7 @@ import { SoapEndpoint } from './soap2graphql/soap-endpoint';
 import { createSoapEndpoint, NodeSoapPort } from './node-soap/node-soap-endpoint';
 import { createLogger, Logger } from './soap2graphql/logger';
 import { NodeSoapCaller } from './node-soap/node-soap-caller';
+import { defaultAttributesKey } from './soap2graphql/name-resolver';
 
 export type SoapGraphqlOptions = {
     /**
@@ -99,7 +100,11 @@ async function useSoapClient(options: SoapGraphqlOptions): Promise<NodeSoapClien
         return options.soapClient;
     }
     if (!!options.createClient) {
-        return await createSoapClient(options.createClient.url, options.createClient.options);
+        return await createSoapClient(
+            options.createClient.url,
+            options.createClient.options,
+            options.schemaOptions?.attributesKey || defaultAttributesKey,
+        );
     }
     throw new Error('neither soap client nor node-soap creation options provided');
 }
