@@ -5,6 +5,7 @@ import { SoapCaller } from './soap-caller';
 import { GraphQLSchemaConfig } from 'graphql/type/schema';
 import { SchemaResolver } from './schema-resolver';
 import { Logger } from './logger';
+import { GraphQLFieldConfigArgumentMap } from 'graphql/index';
 
 /**
  * Options for the GraphQL schema.
@@ -84,6 +85,12 @@ export type SchemaOptions = {
      * default: __attributes
      */
     attributesKey?: string;
+
+    /**
+     * Possibility to add custom input fields to each operation mutation e. g. for metadata or http headers.
+     * You'll probably want to implement a custom NodeSoapCaller when using this field.
+     */
+    additionalOperationArgs?: GraphQLFieldConfigArgumentMap;
 };
 
 export function createSchemaConfig(
