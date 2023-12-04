@@ -222,18 +222,19 @@ export class SchemaResolver {
     }
 
     createSoapOperationFieldArgs(operation: SoapOperation): GraphQLFieldConfigArgumentMap {
-        const args: GraphQLFieldConfigArgumentMap = {};
+        let args: GraphQLFieldConfigArgumentMap = {};
         const inputType = operation.inputType();
         switch (inputType.kind) {
             case 'complexType':
                 const gqlInputType = this.inputResolver.resolve({
                     type: operation.inputType(),
                 }) as GraphQLInputObjectType;
-                return gqlInputType.getFields();
+                args = gqlInputType.getFields();
+                break;
             case 'simpleType':
                 args['input'] = { type: this.scalarResolver.resolve(inputType) };
         }
-        return args;
+        return { ...args, ...(this.options.additionalOperationArgs || {}) };
     }
 
     resolveSoapOperationReturnType(operation: SoapOperation): GraphQLOutputType {
