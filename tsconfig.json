@@ -2,12 +2,12 @@
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES2020",
+    "target": "ES2023",
     "noImplicitAny": false,
     "sourceMap": true,
     "declaration": true,
     "removeComments": false,
-    "lib": ["ES2020"],
+    "lib": ["ES2023"],
     "typeRoots": ["node_modules/@types"]
   },
   "include": ["**/*.ts"],
