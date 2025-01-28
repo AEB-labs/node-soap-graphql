@@ -23,7 +23,9 @@
     "tsc": "tsc --project ./tsconfig.build.json",
     "build": "npm run-script tsc",
     "prepare": "husky install",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prettier:check": "prettier -c .",
+    "prettier:fix": "prettier -w ."
   },
   "dependencies": {
     "graphql-scalars": "^1.18.0"
