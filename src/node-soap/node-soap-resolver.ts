@@ -5,10 +5,10 @@ import {
     SoapSimpleType,
     SoapType,
 } from '../soap2graphql/soap-endpoint';
-import {inspect} from 'util';
-import {NodeSoapOperation} from './node-soap-endpoint';
-import {NodeSoapWsdl} from './node-soap';
-import {LateResolvedMessage, Logger} from '../soap2graphql/logger';
+import { inspect } from 'util';
+import { NodeSoapOperation } from './node-soap-endpoint';
+import { NodeSoapWsdl } from './node-soap';
+import { LateResolvedMessage, Logger } from '../soap2graphql/logger';
 import {
     ComplexContentElement,
     ComplexTypeElement,
@@ -20,7 +20,7 @@ import {
     SequenceElement,
     SimpleTypeElement,
 } from 'soap/lib/wsdl/elements';
-import {isListType} from 'graphql/type';
+import { isListType } from 'graphql/type';
 
 type XsdSupportedTypeDefinition = ComplexTypeElement | SimpleTypeElement | ElementElement;
 
@@ -28,13 +28,16 @@ const XS_STRING: SoapType = {
     kind: 'simpleType',
     name: 'string',
     namespace: 'http://www.w3.org/2001/XMLSchema',
-    base: null
+    base: null,
 };
 
 export class NodeSoapWsdlResolver {
     private alreadyResolved: Map<string, SoapType> = new Map();
 
-    constructor(private wsdl: NodeSoapWsdl, private logger: Logger) {}
+    constructor(
+        private wsdl: NodeSoapWsdl,
+        private logger: Logger,
+    ) {}
 
     warn(message: LateResolvedMessage): void {
         this.logger.warn(message);
@@ -130,7 +133,7 @@ export class NodeSoapWsdlResolver {
                 kind: 'simpleType',
                 name: wsdlTypeName,
                 namespace: namespace,
-                base: null
+                base: null,
             };
             this.alreadyResolved.set(`${namespace}:${wsdlTypeName}`, soapType);
 
@@ -290,7 +293,7 @@ export class NodeSoapWsdlResolver {
         const typeName: string = typeDefinition.$name;
 
         let fields: Element[];
-        let base: SoapType|null;
+        let base: SoapType | null;
 
         const body: Element = typeDefinition.children[0];
         const attributes: Element[] = typeDefinition.children.filter(
@@ -305,7 +308,7 @@ export class NodeSoapWsdlResolver {
                     (child) =>
                         child instanceof ExtensionElement || child instanceof RestrictionElement,
                 ) as ExtensionElement | RestrictionElement;
-                base = this.resolveBaseType(extensionOrRestriction, soapType.name)
+                base = this.resolveBaseType(extensionOrRestriction, soapType.name);
                 const sequence: SequenceElement = extensionOrRestriction.children.find(
                     (child) => child instanceof SequenceElement,
                 ) as SequenceElement;
@@ -314,7 +317,7 @@ export class NodeSoapWsdlResolver {
                         () =>
                             `cannot parse fields for soap type '${typeName}' as currently only restrictions/extensions with sequence are supported. leaving fields empty`,
                     );
-                    fields = []
+                    fields = [];
                 } else {
                     fields = this.extractChildren(sequence);
                 }
@@ -323,11 +326,11 @@ export class NodeSoapWsdlResolver {
                 const restriction = body.children.find(
                     (child) => child instanceof RestrictionElement,
                 ) as RestrictionElement;
-                base = this.resolveBaseType(restriction, soapType.name)
+                base = this.resolveBaseType(restriction, soapType.name);
                 break;
             default:
                 this.warn(() => `cannot parse fields for soap type '${typeName}'`);
-                fields = []
+                fields = [];
                 base = null;
         }
         switch (soapType.kind) {
@@ -337,7 +340,9 @@ export class NodeSoapWsdlResolver {
                 }
                 if (base) {
                     if (base.kind !== 'complexType') {
-                        throw new Error(`Expected complex type as base of complex type ${soapType.name}`)
+                        throw new Error(
+                            `Expected complex type as base of complex type ${soapType.name}`,
+                        );
                     }
                     soapType.base = base;
                 }
@@ -347,7 +352,9 @@ export class NodeSoapWsdlResolver {
             case 'simpleType':
                 if (base) {
                     if (base.kind !== 'simpleType') {
-                        throw new Error(`Expected simple type as base of simple type ${soapType.name}`)
+                        throw new Error(
+                            `Expected simple type as base of simple type ${soapType.name}`,
+                        );
                     }
                     soapType.base = base;
                 }
@@ -356,7 +363,7 @@ export class NodeSoapWsdlResolver {
 
     private resolveBaseType(element: RestrictionElement, soapTypeName: string): SoapType | null {
         const baseTypeName = withoutNamespace(element.$base);
-        const baseTypeNamespace = this.resolveNamespace(element, namespacePrefix(element.$base))
+        const baseTypeNamespace = this.resolveNamespace(element, namespacePrefix(element.$base));
         if (!baseTypeName) {
             return null;
         }
@@ -364,7 +371,7 @@ export class NodeSoapWsdlResolver {
             baseTypeNamespace,
             baseTypeName,
             `base type of soap type '${soapTypeName}'`,
-        )
+        );
     }
 
     private resolveSoapFields(fieldElements: Element[], soapType: SoapComplexType): SoapField[] {
@@ -387,8 +394,8 @@ export class NodeSoapWsdlResolver {
                 return {
                     name: withoutNamespace(field.$ref),
                     type,
-                    isList: getIsList(field)
-                }
+                    isList: getIsList(field),
+                };
             } else if (field.children.length) {
                 let generatedTypeName = `${soapType.name}_${capitalizeFirstLetter(field.$name)}`;
                 type = this.resolveAnonymousTypeToSoapType(field, generatedTypeName);
@@ -458,9 +465,13 @@ export class NodeSoapWsdlResolver {
         if (!prefix) {
             prefix = namespacePrefix(contextElement.$type || contextElement.$lookupType);
         }
-        return contextElement.xmlns[prefix] || contextElement.schemaXmlns[prefix] || this.wsdl.definitions.xmlns[prefix] || contextElement.$targetNamespace;
+        return (
+            contextElement.xmlns[prefix] ||
+            contextElement.schemaXmlns[prefix] ||
+            this.wsdl.definitions.xmlns[prefix] ||
+            contextElement.$targetNamespace
+        );
     }
-
 }
 
 export function withoutNamespace(value: string): string {

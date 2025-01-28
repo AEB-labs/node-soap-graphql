@@ -8,7 +8,10 @@ import { NodeSoapClient } from './node-soap';
  * Default implementation of SoapCaller for node-soap.
  */
 export class NodeSoapCaller implements SoapCaller {
-    constructor(protected soapClient: NodeSoapClient, protected logger: Logger) {}
+    constructor(
+        protected soapClient: NodeSoapClient,
+        protected logger: Logger,
+    ) {}
 
     async call(input: SoapCallInput): Promise<any> {
         this.debug(

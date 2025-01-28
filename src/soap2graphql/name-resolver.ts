@@ -6,24 +6,24 @@ export const defaultOutputNameResolver: NameResolver = (soapType: SoapType) => {
     return !soapType
         ? null
         : !soapType.name
-        ? null
-        : capitalizeFirstLetter(namespacedGraphQLTypeName(soapType));
+          ? null
+          : capitalizeFirstLetter(namespacedGraphQLTypeName(soapType));
 };
 
 export const defaultInputNameResolver: NameResolver = (soapType: SoapType) => {
     return !soapType
         ? null
         : !soapType.name
-        ? null
-        : capitalizeFirstLetter(namespacedGraphQLTypeName(soapType)) + 'Input';
+          ? null
+          : capitalizeFirstLetter(namespacedGraphQLTypeName(soapType)) + 'Input';
 };
 
 export const defaultScalarNameResolver: NameResolver = (soapType: SoapType) => {
     return !soapType
         ? null
         : !soapType.name
-        ? null
-        : capitalizeFirstLetter(namespacedGraphQLTypeName(soapType)) + 'Input';
+          ? null
+          : capitalizeFirstLetter(namespacedGraphQLTypeName(soapType)) + 'Input';
 };
 
 export const defaultInterfaceNameResolver: NameResolver = (soapType: SoapComplexType) => {

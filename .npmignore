@@ -4,3 +4,4 @@ spec/
 index.ts
 SECURITY.md
 tsconfig*
+dist/dev/
