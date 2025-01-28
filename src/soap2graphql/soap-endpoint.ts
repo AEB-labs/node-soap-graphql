@@ -48,10 +48,10 @@ export type SoapType = SoapComplexType | SoapSimpleType;
  * A primitive type in the WSDL.
  */
 export interface SoapSimpleType {
-    kind: 'simpleType';
-    namespace: string;
-    name: string;
-    base?: SoapSimpleType;
+    readonly kind: 'simpleType';
+    readonly namespace: string;
+    readonly name: string;
+    base: SoapSimpleType;
 }
 
 /**
@@ -59,21 +59,21 @@ export interface SoapSimpleType {
  * Defined by its name, fields and maybe a base type.
  */
 export interface SoapComplexType {
-    kind: 'complexType';
-    name: string;
-    namespace: string;
+    readonly kind: 'complexType';
+    readonly name: string;
+    readonly namespace: string;
     base: SoapComplexType;
-    fields: SoapField[];
-    attributes: SoapAttribute[];
+    fields: ReadonlyArray<SoapField>;
+    attributes: ReadonlyArray<SoapAttribute>;
 }
 
 export interface SoapField {
-    name: string;
-    type: SoapType;
-    isList: boolean;
+    readonly name: string;
+    readonly type: SoapType;
+    readonly isList: boolean;
 }
 
 export interface SoapAttribute {
-    name: string;
-    type: SoapSimpleType;
+    readonly name: string;
+    readonly type: SoapSimpleType;
 }
