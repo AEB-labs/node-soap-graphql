@@ -456,7 +456,10 @@ class GraphqlOutputFieldResolver {
 class GraphQLScalarResolver {
     private alreadyResolved: Map<SoapType, GraphQLScalarType> = new Map();
 
-    constructor(private options: SchemaOptions, private logger: Logger) {}
+    constructor(
+        private options: SchemaOptions,
+        private logger: Logger,
+    ) {}
 
     resolve(type: SoapSimpleType): GraphQLScalarType {
         try {

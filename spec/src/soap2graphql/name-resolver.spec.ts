@@ -63,8 +63,12 @@ describe('name-resolver', () => {
         expect(defaultInputNameResolver({ name: 'a', namespace: 'N' } as any)).to.equal('N_AInput');
         expect(defaultInputNameResolver({ name: 'A', namespace: 'N' } as any)).to.equal('N_AInput');
 
-        expect(defaultInputNameResolver({ name: 'ab', namespace: 'N' } as any)).to.equal('N_AbInput');
-        expect(defaultInputNameResolver({ name: 'Ab', namespace: 'N' } as any)).to.equal('N_AbInput');
+        expect(defaultInputNameResolver({ name: 'ab', namespace: 'N' } as any)).to.equal(
+            'N_AbInput',
+        );
+        expect(defaultInputNameResolver({ name: 'Ab', namespace: 'N' } as any)).to.equal(
+            'N_AbInput',
+        );
 
         expect(defaultInputNameResolver({ name: 'abc', namespace: 'N' } as any)).to.equal(
             'N_AbcInput',

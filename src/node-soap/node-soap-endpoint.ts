@@ -17,7 +17,10 @@ export function createSoapEndpoint(soapClient: NodeSoapClient, logger: Logger): 
 export class NodeSoapEndpoint implements SoapEndpoint {
     private _resolver: NodeSoapWsdlResolver;
 
-    constructor(private soapClient: NodeSoapClient, logger: Logger) {
+    constructor(
+        private soapClient: NodeSoapClient,
+        logger: Logger,
+    ) {
         this._resolver = new NodeSoapWsdlResolver(this.soapClient.wsdl, logger);
     }
 
