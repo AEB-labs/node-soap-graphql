@@ -85,6 +85,10 @@ export class NodeSoapWsdlResolver {
                     5,
                 )}'`,
         );
+        if (!outputContent) {
+            this.debug(() => `no output definition for operation '${operation.name()}'`);
+            return undefined;
+        }
         const ns = this.resolveNamespace(outputContent);
         const outputType = this.resolveWsdlNameToSoapType(
             ns,
