@@ -23,6 +23,7 @@ import {
 import { SoapCaller } from './soap-caller';
 import { inspect } from 'util';
 import {
+    GraphQLBoolean,
     GraphQLFieldConfig,
     GraphQLFieldConfigArgumentMap,
     GraphQLFieldConfigMap,
@@ -273,6 +274,12 @@ class GraphqlOutputFieldResolver {
 
     resolve(input: { type: SoapType; isList?: boolean }): GraphQLOutputType {
         try {
+            if (!input?.type) {
+                this.logger.warn(
+                    () => `could not resolve output type, using GraphQLBoolean instead as a dummy type.`,
+                );
+                return GraphQLBoolean;
+            }
             const type: GraphQLOutputType = this.resolveOutputType(input.type);
             return input.isList ? new GraphQLList(type) : type;
         } catch (err) {
