@@ -58,9 +58,10 @@ export class NodeSoapWsdlResolver {
 
         if (!inputContent) {
             this.warn(() => `no input definition for operation '${operation.name()}'`);
+            return undefined
         }
 
-        if (!inputContent.$lookupType) {
+        if (!inputContent.$type && !inputContent.$lookupType) {
             // no args
             return undefined;
         }
@@ -68,7 +69,7 @@ export class NodeSoapWsdlResolver {
         const ns = this.resolveNamespace(inputContent);
         const inputType = this.resolveWsdlNameToSoapType(
             ns,
-            withoutNamespace(inputContent.$lookupType),
+            withoutNamespace(inputContent.$type || inputContent.$lookupType),
             `args of operation '${operation.name()}'`,
         );
         return inputType;
@@ -89,10 +90,14 @@ export class NodeSoapWsdlResolver {
             this.debug(() => `no output definition for operation '${operation.name()}'`);
             return undefined;
         }
+        if (!outputContent.$type && !outputContent.$lookupType) {
+            // no fields
+            return undefined;
+        }
         const ns = this.resolveNamespace(outputContent);
         const outputType = this.resolveWsdlNameToSoapType(
             ns,
-            withoutNamespace(outputContent.$lookupType),
+            withoutNamespace(outputContent.$type || outputContent.$lookupType),
             `return type of operation '${operation.name()}`,
         );
         return {
